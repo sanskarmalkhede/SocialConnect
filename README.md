@@ -1,36 +1,254 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SocialConnect - Modern Social Media Platform
 
-## Getting Started
+A full-featured social media platform built with Next.js 15, Supabase, and TypeScript. Features real-time notifications, admin dashboard, comprehensive error handling, and modern UI components.
 
-First, run the development server:
+## 🚀 Features
+
+### Core Features
+- **User Authentication** - Registration, login, password reset with email verification
+- **User Profiles** - Customizable profiles with avatar upload and privacy settings
+- **Posts & Content** - Create, edit, delete posts with image support and categories
+- **Social Interactions** - Like, comment, follow/unfollow users
+- **Real-time Notifications** - Live updates for likes, comments, follows
+- **Personalized Feed** - Algorithm-based feed with filtering and pagination
+- **Bookmarks** - Save posts for later viewing
+
+### Advanced Features
+- **Admin Dashboard** - User management, content moderation, platform analytics
+- **Real-time Updates** - Supabase Realtime for live notifications
+- **Comprehensive Error Handling** - Global error boundaries and API error handling
+- **Form Validation** - Zod schemas with client and server-side validation
+- **Responsive Design** - Mobile-first design with dark/light mode
+- **Accessibility** - WCAG compliant with keyboard navigation and screen reader support
+
+### Technical Features
+- **Type Safety** - Full TypeScript implementation
+- **Database Security** - Row Level Security (RLS) policies
+- **API Rate Limiting** - Protection against abuse
+- **File Upload** - Secure image upload to Supabase Storage
+- **Testing** - Unit, integration, and E2E tests
+- **Performance** - Optimized queries, caching, and lazy loading
+
+## 🛠 Tech Stack
+
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **Backend**: Next.js API Routes, Supabase
+- **Database**: PostgreSQL (Supabase)
+- **Authentication**: Supabase Auth
+- **Styling**: Tailwind CSS, shadcn/ui
+- **Real-time**: Supabase Realtime
+- **Validation**: Zod
+- **Testing**: Jest, React Testing Library, Playwright
+- **Deployment**: Vercel (recommended)
+
+## 📋 Prerequisites
+
+- Node.js 18+ 
+- npm/yarn/pnpm
+- Supabase account (free tier available)
+
+## 🚀 Quick Start
+
+### 1. Clone and Install
+
+```bash
+git clone <repository-url>
+cd socialconnect-app
+npm install
+```
+
+### 2. Environment Setup
+
+Create `.env.local`:
+
+```env
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# App Configuration
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_NAME=SocialConnect
+```
+
+### 3. Database Setup
+
+1. Create a new Supabase project
+2. Run the database setup script in Supabase SQL Editor:
+
+```sql
+-- Copy and paste the contents of database/setup.sql
+```
+
+3. Enable Realtime for the `notifications` table in Database > Replication
+
+### 4. Run the Application
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit `http://localhost:3000` to see the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 5. Create Admin User
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Register a new account through the UI
+2. In Supabase Dashboard > Authentication > Users, find your user ID
+3. Run in SQL Editor:
 
-## Learn More
+```sql
+UPDATE profiles SET role = 'admin' WHERE id = 'your-user-id';
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 🧪 Testing
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Run Tests
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+# Unit and integration tests
+npm run test
 
-## Deploy on Vercel
+# E2E tests
+npm run test:e2e
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# All tests
+npm run test:all
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Test with coverage
+npm run test:coverage
+
+# Watch mode
+npm run test:watch
+```
+
+### Test Structure
+
+- **Unit Tests**: `src/__tests__/` - Component and utility testing
+- **Integration Tests**: `src/__tests__/api/` - API route testing  
+- **E2E Tests**: `e2e/` - Full user flow testing
+
+## 📁 Project Structure
+
+```
+src/
+├── app/                    # Next.js app router
+│   ├── (dashboard)/       # Protected dashboard routes
+│   ├── api/               # API routes
+│   └── auth/              # Authentication pages
+├── components/            # Reusable UI components
+│   ├── ui/               # Base UI components (shadcn/ui)
+│   ├── auth/             # Authentication components
+│   ├── posts/            # Post-related components
+│   ├── social/           # Social interaction components
+│   ├── feed/             # Feed components
+│   ├── notifications/    # Notification components
+│   ├── admin/            # Admin dashboard components
+│   └── error/            # Error handling components
+├── lib/                   # Business logic and utilities
+│   ├── auth/             # Authentication helpers
+│   ├── supabase/         # Database client and types
+│   ├── posts/            # Post management
+│   ├── social/           # Social features (likes, comments, follows)
+│   ├── feed/             # Feed algorithms
+│   ├── notifications/    # Notification system
+│   ├── admin/            # Admin functionality
+│   ├── validation/       # Form validation schemas
+│   └── api/              # API utilities
+├── __tests__/            # Test files
+└── constants/            # App constants
+```
+
+## 🔧 Configuration
+
+### Supabase Setup
+
+1. **Authentication Settings**:
+   - Site URL: `http://localhost:3000` (development)
+   - Redirect URLs: Add production URLs when deploying
+
+2. **Storage Buckets** (optional):
+   - `avatars` - User profile pictures
+   - `post-images` - Post attachments
+
+3. **Realtime**: Enable for `notifications` table
+
+### Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Yes |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key | Yes |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key | Yes |
+| `NEXT_PUBLIC_APP_URL` | Application URL | Yes |
+| `ALLOWED_ORIGINS` | CORS allowed origins | No |
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+
+1. Push code to GitHub
+2. Connect repository to Vercel
+3. Add environment variables in Vercel dashboard
+4. Update Supabase site URL to production domain
+
+### Other Platforms
+
+The app can be deployed to any platform supporting Next.js:
+- Netlify
+- Railway
+- DigitalOcean App Platform
+- AWS Amplify
+
+## 🔒 Security Features
+
+- **Row Level Security (RLS)** - Database-level security
+- **Input Validation** - Zod schemas for all inputs
+- **Authentication Guards** - Protected routes and API endpoints
+- **Rate Limiting** - API abuse protection
+- **CORS Protection** - Cross-origin request filtering
+- **SQL Injection Prevention** - Parameterized queries
+- **XSS Protection** - React's built-in protection
+
+## 📊 Performance Features
+
+- **Database Indexes** - Optimized query performance
+- **Pagination** - Efficient data loading
+- **Image Optimization** - Next.js automatic optimization
+- **Caching** - Strategic caching for better performance
+- **Lazy Loading** - Component and route-based code splitting
+- **Optimistic Updates** - Better user experience
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new features
+5. Ensure all tests pass
+6. Submit a pull request
+
+## 📝 License
+
+This project is licensed under the MIT License.
+
+## 🆘 Support
+
+For support and questions:
+- Check the troubleshooting section in `SETUP.md`
+- Review the test files for usage examples
+- Open an issue for bugs or feature requests
+
+## 🎯 Roadmap
+
+- [ ] Mobile app (React Native)
+- [ ] Advanced analytics dashboard
+- [ ] Content recommendation engine
+- [ ] Video post support
+- [ ] Direct messaging
+- [ ] Groups and communities
+- [ ] Advanced moderation tools
+
+---
+
+Built with ❤️ using Next.js and Supabase

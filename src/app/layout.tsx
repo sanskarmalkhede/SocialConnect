@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ErrorBoundary } from '@/components/error/ErrorBoundary'
+import { CustomToaster } from '@/components/error/ErrorToast'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Social Connect",
-  description: "Connect & Socialize",
+  title: "SocialConnect - Connect with Friends",
+  description: "A modern social media platform built with Next.js and Supabase",
 };
 
 export default function RootLayout({
@@ -27,7 +29,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <ErrorBoundary>
+          {children}
+          <CustomToaster />
+        </ErrorBoundary>
       </body>
     </html>
   );

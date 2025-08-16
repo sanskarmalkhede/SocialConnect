@@ -7,7 +7,7 @@ import { checkRateLimit } from '@/lib/auth/middleware'
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting
-    const clientIP = request.ip || 'unknown'
+    const clientIP = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     if (!checkRateLimit(`password-reset:${clientIP}`, 3, 15 * 60 * 1000)) {
       return NextResponse.json(
         createAPIResponse(undefined, {

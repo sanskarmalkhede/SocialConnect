@@ -51,6 +51,27 @@ export class ConflictError extends AppError {
   }
 }
 
+export class RateLimitError extends AppError {
+  constructor(message: string = 'Rate limit exceeded') {
+    super(message, 429, 'RATE_LIMIT_ERROR')
+    this.name = 'RateLimitError'
+  }
+}
+
+export class FileUploadError extends AppError {
+  constructor(message: string = 'File upload failed') {
+    super(message, 400, 'FILE_UPLOAD_ERROR')
+    this.name = 'FileUploadError'
+  }
+}
+
+export class NetworkError extends AppError {
+  constructor(message: string = 'Network request failed') {
+    super(message, 503, 'NETWORK_ERROR')
+    this.name = 'NetworkError'
+  }
+}
+
 /**
  * Handle Supabase Auth errors and convert to appropriate AppError
  */

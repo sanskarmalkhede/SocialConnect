@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
         createAPIResponse(undefined, {
           message: 'Invalid input data',
           code: 'VALIDATION_ERROR',
-          details: validationResult.error.errors.map(err => ({
+          details: validationResult.error.issues.map((err: any) => ({
             field: err.path.join('.'),
             message: err.message
           }))

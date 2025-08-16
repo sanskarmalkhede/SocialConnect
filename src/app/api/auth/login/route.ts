@@ -7,7 +7,7 @@ import { checkRateLimit } from '@/lib/auth/middleware'
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting
-    const clientIP = request.ip || 'unknown'
+    const clientIP = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     if (!checkRateLimit(`login:${clientIP}`, 10, 15 * 60 * 1000)) {
       return NextResponse.json(
         createAPIResponse(undefined, {
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
         createAPIResponse(undefined, {
           message: 'Invalid input data',
           code: 'VALIDATION_ERROR',
-          details: validationResult.error.errors.map(err => ({
+          details: validationResult.error.issues.map((err: any) => ({
             field: err.path.join('.'),
             message: err.message
           }))
