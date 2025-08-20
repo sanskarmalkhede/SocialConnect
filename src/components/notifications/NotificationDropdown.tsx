@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase/client'
 import { Bell, Check, CheckCheck, Trash2, Settings, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -38,33 +37,12 @@ export function NotificationDropdown({
     }
   }, [isOpen, currentUser])
 
-
-  // Subscribe to realtime notifications for the current user
+  // Update local notifications from realtime
   useEffect(() => {
-    if (!currentUser) return
-
-    // Subscribe to new notifications for the current user
-    const channel = supabase
-      .channel('notifications')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${currentUser.id}`,
-        },
-        (payload) => {
-          setNotifications((prev) => [payload.new as Notification, ...prev])
-          setUnreadCount((count) => count + 1)
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
+    if (realtimeNotifications.length > 0) {
+      setNotifications(realtimeNotifications)
     }
-  }, [currentUser])
+  }, [realtimeNotifications])
 
   // Load initial unread count
   useEffect(() => {
@@ -82,6 +60,7 @@ export function NotificationDropdown({
       
       if (pageNum === 1) {
         setNotifications(result.notifications)
+        setRealtimeNotifications(result.notifications)
       } else {
         setNotifications(prev => [...prev, ...result.notifications])
       }
@@ -89,6 +68,7 @@ export function NotificationDropdown({
       setHasMore(result.hasMore)
       setPage(pageNum)
     } catch (error) {
+      console.error('Load notifications error:', error)
       toast.error('Failed to load notifications')
     } finally {
       setIsLoading(false)
@@ -102,6 +82,7 @@ export function NotificationDropdown({
       const count = await getUnreadNotificationCount(currentUser.id)
       setUnreadCount(count)
     } catch (error) {
+      console.error('Load unread count error:', error)
     }
   }
 
@@ -110,10 +91,10 @@ export function NotificationDropdown({
 
     try {
       await markAllNotificationsAsRead(currentUser.id)
-  // Mark all as read in local state
-  setNotifications((prev) => prev.map(n => ({ ...n, is_read: true })))
+      realtimeMarkAllAsRead()
       toast.success('All notifications marked as read')
     } catch (error) {
+      console.error('Mark all as read error:', error)
       toast.error('Failed to mark notifications as read')
     }
   }
@@ -155,7 +136,9 @@ export function NotificationDropdown({
               <CardTitle className="text-sm flex items-center gap-2">
                 <Bell className="h-4 w-4" />
                 Notifications
-
+                {!isConnected && (
+                  <div className="h-2 w-2 rounded-full bg-yellow-500" title="Reconnecting..." />
+                )}
               </CardTitle>
               
               <div className="flex items-center gap-1">
@@ -204,7 +187,8 @@ export function NotificationDropdown({
                     <NotificationItem
                       key={notification.id}
                       notification={notification}
-                      // Optionally, add mark as read/delete handlers here if needed
+                      onMarkAsRead={markAsRead}
+                      onDelete={removeNotification}
                       onClick={() => setIsOpen(false)}
                     />
                   ))}
@@ -246,5 +230,23 @@ export function CompactNotificationDropdown({
   showBadgeOnly = false,
   ...props
 }: CompactNotificationDropdownProps) {
-  // CompactNotificationDropdown is not needed for real-time logic, so we can remove or refactor it if required.
+  const { unreadCount } = useNotificationRealtime(props.currentUser?.id)
+
+  if (showBadgeOnly) {
+    return (
+      <div className="relative">
+        <Bell className="h-5 w-5" />
+        {unreadCount > 0 && (
+          <Badge 
+            variant="destructive" 
+            className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs flex items-center justify-center"
+          >
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </Badge>
+        )}
+      </div>
+    )
+  }
+
+  return <NotificationDropdown {...props} />
 }

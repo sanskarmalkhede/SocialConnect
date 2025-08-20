@@ -32,6 +32,7 @@ export async function uploadImage(file: File): Promise<string> {
 
     return publicUrl
   } catch (error) {
+    console.error('Image upload error:', error)
     throw new Error('Failed to upload image. Please try again.')
   }
 }
@@ -54,6 +55,7 @@ export async function deleteImage(url: string): Promise<void> {
       throw new Error('Failed to delete image: ' + error.message)
     }
   } catch (error) {
+    console.error('Image delete error:', error)
     throw new Error('Failed to delete image. Please try again.')
   }
 }
