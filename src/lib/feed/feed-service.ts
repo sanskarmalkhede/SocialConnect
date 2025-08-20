@@ -71,7 +71,6 @@ export async function getPersonalizedFeed(userId: string, page: number = 1, limi
       hasMore: (count || 0) > offset + limit
     }
   } catch (error) {
-    console.error('Get personalized feed error:', error)
     throw error
   }
 }
@@ -132,7 +131,6 @@ export async function getPublicFeed(userId?: string, page: number = 1, limit: nu
       hasMore: (count || 0) > offset + limit
     }
   } catch (error) {
-    console.error('Get public feed error:', error)
     throw error
   }
 }
@@ -219,7 +217,6 @@ export async function getTrendingFeed(
       timeframe
     }
   } catch (error) {
-    console.error('Get trending feed error:', error)
     throw error
   }
 }
@@ -286,7 +283,6 @@ export async function getCategoryFeed(
       category
     }
   } catch (error) {
-    console.error('Get category feed error:', error)
     throw error
   }
 }
@@ -335,7 +331,6 @@ export async function getAdvancedFeed(options: {
         return getPublicFeed(userId, page, limit)
     }
   } catch (error) {
-    console.error('Get advanced feed error:', error)
     throw error
   }
 }
@@ -343,51 +338,68 @@ export async function getAdvancedFeed(options: {
 /**
  * Get feed statistics for analytics
  */
-export async function getFeedStats(userId: string) {
+export async function getFeedStats(userId?: string) {
   try {
-    // Get following count
-    const { count: followingCount, error: followingError } = await supabase
-      .from('follows')
-      .select('*', { count: 'exact', head: true })
-      .eq('follower_id', userId)
-
-    if (followingError) {
-      throw handleDatabaseError(followingError)
-    }
-
-    // Get posts count from followed users in last 24 hours
-    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-    
-    const { data: followingData } = await supabase
-      .from('follows')
-      .select('following_id')
-      .eq('follower_id', userId)
-
-    const followingIds = followingData?.map(f => f.following_id) || []
-
-    let newPostsCount = 0
-    if (followingIds.length > 0) {
-      const { count, error: postsError } = await supabase
-        .from('posts')
+    if (userId) {
+      // Get following count for the user
+      const { count: followingCount, error: followingError } = await supabase
+        .from('follows')
         .select('*', { count: 'exact', head: true })
-        .eq('is_active', true)
-        .in('author_id', followingIds)
-        .gte('created_at', yesterday)
+        .eq('follower_id', userId)
 
-      if (postsError) {
-        throw handleDatabaseError(postsError)
+      if (followingError) {
+        throw handleDatabaseError(followingError)
       }
 
-      newPostsCount = count || 0
+      // Get posts count from followed users in last 24 hours
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+      
+      const { data: followingData } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', userId)
+
+      const followingIds = followingData?.map(f => f.following_id) || []
+
+      let newPostsCount = 0
+      if (followingIds.length > 0) {
+        const { count, error: postsError } = await supabase
+          .from('posts')
+          .select('*', { count: 'exact', head: true })
+          .eq('is_active', true)
+          .in('author_id', followingIds)
+          .gte('created_at', yesterday)
+
+        if (postsError) {
+          throw handleDatabaseError(postsError)
+        }
+
+        newPostsCount = count || 0
+      }
+
+      return {
+        followingCount: followingCount || 0,
+        newPostsLast24h: newPostsCount,
+        lastUpdated: new Date().toISOString()
+      }
     }
 
+    // Public stats fallback when no userId provided
+    const { count: totalPostsCount } = await supabase
+      .from('posts')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true)
+
+    const { count: totalUsersCount } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+
     return {
-      followingCount: followingCount || 0,
-      newPostsLast24h: newPostsCount,
+      totalPosts: totalPostsCount || 0,
+      totalUsers: totalUsersCount || 0,
       lastUpdated: new Date().toISOString()
     }
   } catch (error) {
-    console.error('Get feed stats error:', error)
     throw error
   }
 }

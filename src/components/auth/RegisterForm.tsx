@@ -49,7 +49,6 @@ export function RegisterForm() {
         router.refresh()
       }
     } catch (error) {
-      console.error('Registration error:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to create account')
     } finally {
       setIsLoading(false)
@@ -58,18 +57,16 @@ export function RegisterForm() {
 
   if (registrationComplete) {
     return (
-      <Card className="w-full max-w-md mx-auto">
-        <CardHeader className="space-y-1 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-            <CheckCircle className="h-6 w-6 text-green-600" />
-          </div>
-          <CardTitle className="text-2xl font-bold">Check your email</CardTitle>
-          <CardDescription>
-            We&apos;ve sent a verification link to your email address. Please click the link to verify your account.
-          </CardDescription>
-        </CardHeader>
+      <div className="text-center">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+          <CheckCircle className="h-6 w-6 text-green-600" />
+        </div>
+        <h2 className="text-2xl font-bold mb-2">Check your email</h2>
+        <p className="text-muted-foreground mb-6">
+          We&apos;ve sent a verification link to your email address. Please click the link to verify your account.
+        </p>
         
-        <CardFooter className="flex flex-col space-y-4">
+        <div className="flex flex-col space-y-4">
           <Button
             onClick={() => setRegistrationComplete(false)}
             variant="outline"
@@ -87,20 +84,12 @@ export function RegisterForm() {
               Sign in
             </Link>
           </p>
-        </CardFooter>
-      </Card>
+        </div>
+      </div>
     )
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center">Create account</CardTitle>
-        <CardDescription className="text-center">
-          Join SocialConnect and start connecting
-        </CardDescription>
-      </CardHeader>
-      
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
@@ -234,6 +223,5 @@ export function RegisterForm() {
           </CardFooter>
         </form>
       </Form>
-    </Card>
   )
 }

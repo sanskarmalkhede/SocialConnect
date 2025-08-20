@@ -38,7 +38,7 @@ export function NotFoundPage() {
   return (
     <ErrorPage
       title="Page Not Found"
-      description="The page you're looking for doesn't exist or has been moved."
+      description="The page you&apos;re looking for doesn&apos;t exist or has been moved."
       icon={<Search className="h-8 w-8 text-muted-foreground" />}
       actions={
         <div className="flex flex-col gap-2">
@@ -59,7 +59,7 @@ export function UnauthorizedPage() {
   return (
     <ErrorPage
       title="Access Denied"
-      description="You don't have permission to access this page. Please sign in or contact an administrator."
+      description="You don&apos;t have permission to access this page. Please sign in or contact an administrator."
       icon={<Lock className="h-8 w-8 text-muted-foreground" />}
       actions={
         <div className="flex flex-col gap-2">
@@ -80,7 +80,7 @@ export function ServerErrorPage() {
   return (
     <ErrorPage
       title="Server Error"
-      description="Something went wrong on our end. We're working to fix it. Please try again later."
+      description="Something went wrong on our end. We&apos;re working to fix it. Please try again later."
       icon={<Server className="h-8 w-8 text-muted-foreground" />}
       actions={
         <div className="flex flex-col gap-2">
@@ -124,7 +124,7 @@ export function MaintenancePage() {
   return (
     <ErrorPage
       title="Under Maintenance"
-      description="We're currently performing scheduled maintenance. We'll be back shortly."
+      description="We&apos;re currently performing scheduled maintenance. We&apos;ll be back shortly."
       icon={<AlertTriangle className="h-8 w-8 text-muted-foreground" />}
       actions={
         <Button variant="outline" onClick={() => window.location.reload()} className="w-full">

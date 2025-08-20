@@ -55,7 +55,6 @@ export async function getUserNotifications(
       hasMore: (count || 0) > offset + limit
     }
   } catch (error) {
-    console.error('Get user notifications error:', error)
     throw error
   }
 }
@@ -77,7 +76,6 @@ export async function getUnreadNotificationCount(userId: string): Promise<number
 
     return count || 0
   } catch (error) {
-    console.error('Get unread notification count error:', error)
     throw error
   }
 }
@@ -97,7 +95,6 @@ export async function markNotificationAsRead(notificationId: string, userId: str
       throw handleDatabaseError(error)
     }
   } catch (error) {
-    console.error('Mark notification as read error:', error)
     throw error
   }
 }
@@ -117,7 +114,6 @@ export async function markAllNotificationsAsRead(userId: string): Promise<void> 
       throw handleDatabaseError(error)
     }
   } catch (error) {
-    console.error('Mark all notifications as read error:', error)
     throw error
   }
 }
@@ -137,7 +133,6 @@ export async function deleteNotification(notificationId: string, userId: string)
       throw handleDatabaseError(error)
     }
   } catch (error) {
-    console.error('Delete notification error:', error)
     throw error
   }
 }
@@ -156,7 +151,6 @@ export async function deleteAllNotifications(userId: string): Promise<void> {
       throw handleDatabaseError(error)
     }
   } catch (error) {
-    console.error('Delete all notifications error:', error)
     throw error
   }
 }
@@ -185,7 +179,6 @@ export async function createFollowNotification(
       throw handleDatabaseError(error)
     }
   } catch (error) {
-    console.error('Create follow notification error:', error)
     throw error
   }
 }
@@ -216,7 +209,6 @@ export async function createLikeNotification(
       throw handleDatabaseError(error)
     }
   } catch (error) {
-    console.error('Create like notification error:', error)
     throw error
   }
 }
@@ -247,7 +239,6 @@ export async function createCommentNotification(
       throw handleDatabaseError(error)
     }
   } catch (error) {
-    console.error('Create comment notification error:', error)
     throw error
   }
 }
@@ -285,7 +276,6 @@ export async function getNotificationById(notificationId: string): Promise<Notif
 
     return data as Notification
   } catch (error) {
-    console.error('Get notification by ID error:', error)
     throw error
   }
 }
@@ -309,7 +299,6 @@ export async function cleanupOldNotifications(): Promise<number> {
 
     return data?.length || 0
   } catch (error) {
-    console.error('Cleanup old notifications error:', error)
     throw error
   }
 }

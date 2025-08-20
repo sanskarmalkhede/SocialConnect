@@ -1,25 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getFeedStats } from '@/lib/feed/feed-service'
 import { handleAPIError, createAPIResponse } from '@/lib/api/error-handler'
-import { authenticateRequest } from '@/lib/auth/auth-helpers'
+import { optionalAuthMiddleware } from '@/lib/auth/server-auth-helpers'
 
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await authenticateRequest(request)
+    const session = await optionalAuthMiddleware(request)
+    const userId = session?.user?.id
 
-    const stats = await getFeedStats(user.id)
+    const result = await getFeedStats(userId)
 
-    return NextResponse.json(
-      createAPIResponse(stats),
-      { status: 200 }
-    )
+    return createAPIResponse({ data: result })
   } catch (error) {
-    console.error('Get feed stats API error:', error)
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }

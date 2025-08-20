@@ -25,7 +25,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Like post API error:', error)
     const errorResponse = handleAPIError(error)
     return NextResponse.json(errorResponse, { 
       status: error instanceof Error && 'statusCode' in error 
@@ -51,7 +50,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Unlike post API error:', error)
     const errorResponse = handleAPIError(error)
     return NextResponse.json(errorResponse, { 
       status: error instanceof Error && 'statusCode' in error 
@@ -76,7 +74,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Get like status API error:', error)
     const errorResponse = handleAPIError(error)
     return NextResponse.json(errorResponse, { 
       status: error instanceof Error && 'statusCode' in error 

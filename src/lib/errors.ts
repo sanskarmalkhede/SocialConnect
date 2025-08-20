@@ -1,5 +1,16 @@
-import { AuthError } from '@supabase/supabase-js'
-import type { APIResponse } from './validations'
+import { AuthError, PostgrestError } from '@supabase/supabase-js'
+
+export interface APIError {
+  message: string
+  code?: string
+  details?: ValidationError[]
+}
+
+export interface APIResponse<T> {
+  data: T
+  error?: APIError
+  status: number
+}
 
 export class AppError extends Error {
   public statusCode: number
@@ -66,102 +77,106 @@ export class FileUploadError extends AppError {
 }
 
 export class NetworkError extends AppError {
-  constructor(message: string = 'Network request failed') {
+  constructor(message: string = 'Network error occurred') {
     super(message, 503, 'NETWORK_ERROR')
     this.name = 'NetworkError'
   }
 }
 
-/**
- * Handle Supabase Auth errors and convert to appropriate AppError
- */
-export function handleAuthError(error: AuthError): AppError {
-  switch (error.message) {
-    case 'Invalid login credentials':
-      return new AuthenticationError('Invalid email or password')
-    case 'Email not confirmed':
-      return new AuthenticationError('Please verify your email address before signing in')
-    case 'User already registered':
-      return new ConflictError('An account with this email already exists')
-    case 'Password should be at least 6 characters':
-      return new ValidationError('Password must be at least 6 characters')
-    default:
-      return new AppError(error.message, 400, 'AUTH_ERROR')
+export class DatabaseError extends AppError {
+  constructor(message: string = 'Database error occurred') {
+    super(message, 500, 'DATABASE_ERROR')
+    this.name = 'DatabaseError'
   }
 }
 
 /**
- * Handle database errors and convert to appropriate AppError
+ * Helper function to create consistent API responses
  */
-export function handleDatabaseError(error: any): AppError {
-  if (error.code === '23505') {
-    // Unique constraint violation
-    if (error.constraint?.includes('username')) {
-      return new ConflictError('Username is already taken')
-    }
-    return new ConflictError('Resource already exists')
-  }
-  
-  if (error.code === '23503') {
-    // Foreign key constraint violation
-    return new ValidationError('Referenced resource does not exist')
-  }
-  
-  if (error.code === '23514') {
-    // Check constraint violation
-    return new ValidationError('Invalid data provided')
-  }
-  
-  return new AppError('Database operation failed', 500, 'DATABASE_ERROR')
-}
-
-/**
- * Create a standardized API response
- */
-export function createAPIResponse<T>(
-  data?: T,
-  error?: { message: string; code?: string; details?: any }
-): APIResponse<T> {
+export function createAPIResponse<T>(data: T, error?: APIError | null, status: number = 200): APIResponse<T> {
   return {
     data,
-    error,
-    success: !error
+    error: error || undefined,
+    status
   }
 }
 
 /**
- * Create an error API response from an AppError
+ * Helper function to create error responses
  */
-export function createErrorResponse(error: AppError): APIResponse {
-  return createAPIResponse(undefined, {
-    message: error.message,
-    code: error.code,
-    details: error instanceof ValidationError && error.field ? [{ field: error.field, message: error.message }] : undefined
-  })
+export function createAPIErrorResponse(error: AppError | AuthError | Error): APIResponse<null> {
+  const statusCode = error instanceof AppError ? error.statusCode : 500
+  const code = error instanceof AppError ? error.code : 'INTERNAL_SERVER_ERROR'
+
+  return {
+    data: null,
+    error: {
+      message: error.message,
+      code
+    },
+    status: statusCode
+  }
 }
 
 /**
- * Handle and format errors for API responses
+ * Helper function to handle API errors
  */
-export function handleAPIError(error: unknown): APIResponse {
-  console.error('API Error:', error)
-  
+export function handleAPIError(error: unknown): never {
   if (error instanceof AppError) {
-    return createErrorResponse(error)
+    throw error
   }
-  
   if (error instanceof AuthError) {
-    return createErrorResponse(handleAuthError(error))
+    throw new AuthenticationError(error.message)
   }
-  
-  // Handle Supabase database errors
-  if (error && typeof error === 'object' && 'code' in error) {
-    return createErrorResponse(handleDatabaseError(error))
+  if (error instanceof Error) {
+    throw new AppError(error.message)
   }
-  
-  // Generic error fallback
-  return createAPIResponse(undefined, {
-    message: 'An unexpected error occurred',
-    code: 'INTERNAL_ERROR'
-  })
+  if (typeof error === 'string') {
+    throw new AppError(error)
+  }
+  throw new AppError('An unexpected error occurred')
+}
+
+/**
+ * Helper function to handle Supabase database errors
+ */
+export function handleDatabaseError(error: PostgrestError | Error): never {
+  if ('code' in error) {
+    // Handle specific Postgres error codes
+    switch (error.code) {
+      case '23505': // unique_violation
+        throw new ConflictError(error.message)
+      case '23503': // foreign_key_violation
+        throw new ValidationError(error.message)
+      default:
+        throw new DatabaseError(error.message)
+    }
+  }
+  throw new DatabaseError(error.message)
+}
+
+/**
+ * Helper function to handle authentication errors
+ */
+export function handleAuthError(error: AuthError | Error): never {
+  if (error instanceof AuthError) {
+    // Map Supabase auth errors to more user-friendly messages
+    switch (error.status) {
+      case 400:
+        if (error.message.includes('email already taken')) {
+          throw new ConflictError('This email is already registered')
+        }
+        if (error.message.includes('password')) {
+          throw new ValidationError('Password must be at least 6 characters long')
+        }
+        break
+      case 401:
+        throw new AuthenticationError('Invalid email or password')
+      case 422:
+        throw new ValidationError('Invalid email format')
+    }
+    // Default error message
+    throw new AuthenticationError(error.message)
+  }
+  throw error
 }

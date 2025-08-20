@@ -21,7 +21,8 @@ interface PostFeedProps {
   feedType?: 'personalized' | 'public' | 'trending'
   onLoadMore?: () => void
   onRefresh?: () => void
-  onCreatePost?: (data: any) => Promise<void>
+  onCreatePost?: () => Promise<void>
+  onCreatePost?: () => Promise<void>
   onLikePost?: (postId: string) => Promise<void>
   onUnlikePost?: (postId: string) => Promise<void>
   onCommentPost?: (postId: string) => void
@@ -32,7 +33,7 @@ interface PostFeedProps {
 }
 
 export function PostFeed({
-  posts,
+  posts = [],
   currentUser,
   isLoading = false,
   hasMore = false,
@@ -66,11 +67,13 @@ export function PostFeed({
     }
   }
 
-  const handleCreatePost = async (data: any) => {
+  const handleCreatePost = async () => {
     try {
-      await onCreatePost?.(data)
-      setShowCreatePost(false)
-      toast.success('Post created successfully')
+      // PostForm handles creation internally and calls onSuccess.
+      // If a parent callback is provided (onCreatePost) call it as a notifier.
+      await onCreatePost?.()
+  setShowCreatePost(false)
+  toast.success('Post created successfully')
     } catch (error) {
       console.error('Create post error:', error)
       toast.error('Failed to create post')
@@ -133,10 +136,10 @@ export function PostFeed({
       {/* Create Post Form */}
       {showCreatePost && currentUser && onCreatePost && (
         <PostForm
-          profile={currentUser}
-          onSubmit={handleCreatePost}
-          onCancel={() => setShowCreatePost(false)}
-        />
+            profile={currentUser}
+            onSuccess={handleCreatePost}
+            onOpenChange={(open) => { if (!open) setShowCreatePost(false) }}
+          />
       )}
 
       {/* Posts List */}
@@ -166,7 +169,7 @@ export function PostFeed({
               </CardContent>
             </Card>
           ))
-        ) : posts.length > 0 ? (
+  ) : posts.length > 0 ? (
           <>
             {posts.map((post) => (
               <PostCard

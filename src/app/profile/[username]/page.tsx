@@ -8,72 +8,75 @@ import { ProfileForm } from '@/components/profile/ProfileForm'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import type { Profile } from '@/lib/supabase/types'
+import { getProfileByUsername } from '@/lib/profile/profile-service'
+import { useAuth } from '@/lib/auth/auth-helpers'
+import { checkFollowStatus, followUser, unfollowUser } from '@/lib/social/follow-service'
+import { toast } from 'sonner'
 
 export default function ProfilePage() {
   const params = useParams()
   const username = params.username as string
   
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [currentUser, setCurrentUser] = useState<Profile | null>(null)
+  const { profile: currentUser, isLoading: authLoading } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [isFollowing, setIsFollowing] = useState(false)
 
   useEffect(() => {
-    // In a real app, this would load the profile and current user from the API
-    // For demo purposes, we'll simulate data
-    const mockProfile: Profile = {
-      id: username === 'demo_user' ? '1' : '2',
-      username: username,
-      bio: username === 'demo_user' ? 'Welcome to SocialConnect!' : 'Another user on SocialConnect',
-      avatar_url: null,
-      role: 'user',
-      profile_visibility: 'public',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      post_count: Math.floor(Math.random() * 50),
-      follower_count: Math.floor(Math.random() * 200),
-      following_count: Math.floor(Math.random() * 100)
+    const load = async () => {
+      setIsLoading(true)
+      try {
+        const p = await getProfileByUsername(username)
+        setProfile(p)
+
+        if (p && currentUser) {
+          try {
+            const follows = await checkFollowStatus(currentUser.id, p.id)
+            setIsFollowing(follows)
+          } catch (err) {
+            setIsFollowing(false)
+          }
+        }
+      } catch (err) {
+        setProfile(null)
+      } finally {
+        setIsLoading(false)
+      }
     }
 
-    const mockCurrentUser: Profile = {
-      id: '1',
-      username: 'demo_user',
-      bio: 'Welcome to SocialConnect!',
-      avatar_url: null,
-      role: 'user',
-      profile_visibility: 'public',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      post_count: 0,
-      follower_count: 0,
-      following_count: 0
-    }
-
-    setProfile(mockProfile)
-    setCurrentUser(mockCurrentUser)
-    setIsFollowing(Math.random() > 0.5) // Random follow status for demo
-    setIsLoading(false)
-  }, [username])
+    if (username) load()
+  }, [username, currentUser])
 
   const handleFollow = async () => {
-    console.log('Follow user:', profile?.id)
+    if (!currentUser || !profile) return
     setIsFollowing(true)
-    // In a real app, this would call the API
+    try {
+      await followUser(currentUser.id, profile.id)
+      toast.success('Followed')
+    } catch (err) {
+      setIsFollowing(false)
+      toast.error(err instanceof Error ? err.message : 'Failed to follow')
+    }
   }
 
   const handleUnfollow = async () => {
-    console.log('Unfollow user:', profile?.id)
+    if (!currentUser || !profile) return
     setIsFollowing(false)
-    // In a real app, this would call the API
+    try {
+      await unfollowUser(currentUser.id, profile.id)
+      toast.success('Unfollowed')
+    } catch (err) {
+      setIsFollowing(true)
+      toast.error(err instanceof Error ? err.message : 'Failed to unfollow')
+    }
   }
 
   const handleEditProfile = () => {
     setIsEditing(true)
   }
 
-  const handleSaveProfile = async (data: any) => {
-    console.log('Save profile:', data)
+  const handleSaveProfile = async (_data: any) => {
     // In a real app, this would call the API
     setIsEditing(false)
   }
@@ -95,7 +98,7 @@ export default function ProfilePage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-2">Profile not found</h1>
-          <p className="text-muted-foreground mb-4">The user you're looking for doesn't exist.</p>
+          <p className="text-muted-foreground mb-4">The user you&apos;re looking for doesn&apos;t exist.</p>
           <Button onClick={() => window.history.back()}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Go Back
@@ -131,7 +134,6 @@ export default function ProfilePage() {
               onSubmit={handleSaveProfile}
               onCancel={handleCancelEdit}
               isLoading={false}
-              isEditing={true}
             />
           ) : (
             <>
@@ -152,9 +154,9 @@ export default function ProfilePage() {
                 followers={[]} // In a real app, this would be loaded from the API
                 following={[]} // In a real app, this would be loaded from the API
                 isLoading={false}
-                onLoadMorePosts={() => console.log('Load more posts')}
-                onLoadMoreFollowers={() => console.log('Load more followers')}
-                onLoadMoreFollowing={() => console.log('Load more following')}
+                onLoadMorePosts={() => {}}
+                onLoadMoreFollowers={() => {}}
+                onLoadMoreFollowing={() => {}}
                 hasMorePosts={false}
                 hasMoreFollowers={false}
                 hasMoreFollowing={false}

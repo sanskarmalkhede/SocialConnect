@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   location TEXT,
   role VARCHAR(10) DEFAULT 'user' CHECK (role IN ('user', 'admin')),
   profile_visibility VARCHAR(20) DEFAULT 'public' 
-    CHECK (profile_visibility IN ('public', 'private', 'followers_only')),
+    CHECK (profile_visibility IN ('public', 'private')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -50,6 +50,6 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Create trigger to automatically create profile when user signs up
-CREATE TRIGGER on_auth_user_created
+CREATE TRIGGER on_custom_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION handle_new_user();

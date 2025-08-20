@@ -5,7 +5,7 @@ import { CONTENT_LIMITS, POST_CATEGORIES } from '@/constants'
  * Post content validation
  */
 export function validatePostContent(content: string): { isValid: boolean; error?: string } {
-  if (!content.trim()) {
+  if (!content || !content.trim()) {
     return {
       isValid: false,
       error: 'Post content is required'
@@ -102,9 +102,7 @@ export const postFormSchema = z.object({
       (content) => content.trim().length > 0,
       'Post content cannot be empty'
     ),
-  category: z.enum(['general', 'announcement', 'question'], {
-    errorMap: () => ({ message: 'Please select a valid category' })
-  }),
+  category: z.enum(['general', 'announcement', 'question']),
   image_url: z
     .string()
     .url('Invalid image URL')
@@ -138,7 +136,8 @@ export function checkInappropriateContent(content: string): { isAppropriate: boo
   }
 
   // Check for excessive capitalization
-  const capsRatio = (content.match(/[A-Z]/g) || []).length / content.length
+  const upperMatches = (content.match(/[A-Z]/g) || []).length
+  const capsRatio = content.length > 0 ? upperMatches / content.length : 0
   if (capsRatio > 0.7 && content.length > 20) {
     return {
       isAppropriate: false,

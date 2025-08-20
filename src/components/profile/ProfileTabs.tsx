@@ -101,7 +101,7 @@ export function ProfileTabs({
             <Card>
               <CardContent className="p-8 text-center">
                 <p className="text-muted-foreground">
-                  {isOwnProfile ? "You haven't posted anything yet." : "No posts yet."}
+                  {isOwnProfile ? "You haven&apos;t posted anything yet." : "No posts yet."}
                 </p>
               </CardContent>
             </Card>
@@ -179,7 +179,7 @@ export function ProfileTabs({
             <Card>
               <CardContent className="p-8 text-center">
                 <p className="text-muted-foreground">
-                  {isOwnProfile ? "You don't have any followers yet." : "No followers yet."}
+                  {isOwnProfile ? "You don&apos;t have any followers yet." : "No followers yet."}
                 </p>
               </CardContent>
             </Card>
@@ -257,7 +257,7 @@ export function ProfileTabs({
             <Card>
               <CardContent className="p-8 text-center">
                 <p className="text-muted-foreground">
-                  {isOwnProfile ? "You're not following anyone yet." : "Not following anyone yet."}
+                  {isOwnProfile ? "You&apos;re not following anyone yet." : "Not following anyone yet."}
                 </p>
               </CardContent>
             </Card>

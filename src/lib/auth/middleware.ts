@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 import { AuthenticationError, AuthorizationError } from '@/lib/errors'
 import type { User } from '@supabase/supabase-js'
 import type { Profile } from '@/lib/supabase/types'
@@ -33,14 +33,14 @@ function extractToken(request: NextRequest): string | null {
 export async function validateToken(token: string): Promise<{ user: User; profile: Profile }> {
   try {
     // Verify JWT token with Supabase
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token)
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token)
 
     if (userError || !user) {
       throw new AuthenticationError('Invalid or expired token')
     }
 
     // Get user profile
-    const { data: profile, error: profileError } = await supabaseAdmin
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', user.id)
@@ -52,7 +52,6 @@ export async function validateToken(token: string): Promise<{ user: User; profil
 
     return { user, profile }
   } catch (error) {
-    console.error('Token validation error:', error)
     throw error instanceof AuthenticationError ? error : new AuthenticationError('Token validation failed')
   }
 }
@@ -112,8 +111,7 @@ export async function optionalAuth(request: NextRequest): Promise<{ user: User; 
 
     return await validateToken(token)
   } catch (error) {
-    // Log error but don't throw for optional auth
-    console.error('Optional auth error:', error)
+    // don't throw for optional auth
     return null
   }
 }
@@ -126,7 +124,6 @@ export async function getUserFromRequest(request: NextRequest): Promise<User | n
     const auth = await optionalAuth(request)
     return auth?.user || null
   } catch (error) {
-    console.error('Get user from request error:', error)
     return null
   }
 }
@@ -154,7 +151,7 @@ export async function canAccessProfile(
   }
 
   // Admins can access all profiles
-  const { data: currentProfile } = await supabaseAdmin
+  const { data: currentProfile } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', currentUser.id)
@@ -166,7 +163,7 @@ export async function canAccessProfile(
 
   // For followers_only, check if current user follows the target user
   if (targetProfile.profile_visibility === 'followers_only') {
-    const { data: followRelation } = await supabaseAdmin
+    const { data: followRelation } = await supabase
       .from('follows')
       .select('follower_id')
       .eq('follower_id', currentUser.id)

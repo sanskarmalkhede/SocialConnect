@@ -34,7 +34,6 @@ export async function GET(request: NextRequest) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Search users API error:', error)
     const errorResponse = handleAPIError(error)
     return NextResponse.json(errorResponse, { 
       status: error instanceof Error && 'statusCode' in error 

@@ -75,7 +75,6 @@ export const ROUTES = {
   HOME: '/',
   LOGIN: '/auth/login',
   REGISTER: '/auth/register',
-  RESET_PASSWORD: '/auth/reset-password',
   FEED: '/feed',
   PROFILE: '/profile',
   NOTIFICATIONS: '/notifications',
@@ -91,9 +90,7 @@ export const API_ENDPOINTS = {
   AUTH_REGISTER: '/api/auth/register',
   AUTH_LOGIN: '/api/auth/login',
   AUTH_LOGOUT: '/api/auth/logout',
-  AUTH_RESET_PASSWORD: '/api/auth/password-reset',
-  AUTH_CHANGE_PASSWORD: '/api/auth/change-password',
-  AUTH_REFRESH_TOKEN: '/api/auth/refresh-token',
+  // Removed extra auth endpoints for MVP
   
   // Users
   USERS: '/api/users',
@@ -122,12 +119,7 @@ export const API_ENDPOINTS = {
   NOTIFICATIONS_MARK_ALL_READ: '/api/notifications/mark-all-read',
   
   // Admin
-  ADMIN_USERS: '/api/admin/users',
-  ADMIN_USER_BY_ID: (id: string) => `/api/admin/users/${id}`,
-  ADMIN_USER_DEACTIVATE: (id: string) => `/api/admin/users/${id}/deactivate`,
-  ADMIN_POSTS: '/api/admin/posts',
-  ADMIN_POST_BY_ID: (id: string) => `/api/admin/posts/${id}`,
-  ADMIN_STATS: '/api/admin/stats'
+  // Admin endpoints can be added later
 } as const
 
 // Storage Buckets

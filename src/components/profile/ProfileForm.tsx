@@ -61,7 +61,7 @@ export function ProfileForm({ profile, onSubmit, onCancel, isLoading = false }: 
           form.clearErrors('username')
         }
       } catch (error) {
-        console.error('Username check error:', error)
+        
       } finally {
         setUsernameChecking(false)
       }
@@ -106,7 +106,6 @@ export function ProfileForm({ profile, onSubmit, onCancel, isLoading = false }: 
         avatar: avatarFile || undefined
       })
     } catch (error) {
-      console.error('Profile update error:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to update profile')
     }
   }
@@ -264,7 +263,7 @@ export function ProfileForm({ profile, onSubmit, onCancel, isLoading = false }: 
                     />
                   </FormControl>
                   <FormDescription>
-                    Where you're based
+                    Where you&apos;re based
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

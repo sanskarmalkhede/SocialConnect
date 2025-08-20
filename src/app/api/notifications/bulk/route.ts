@@ -43,7 +43,6 @@ export async function PATCH(request: NextRequest) {
         )
     }
   } catch (error) {
-    console.error('Bulk update notifications API error:', error)
     const errorResponse = handleAPIError(error)
     return NextResponse.json(errorResponse, { 
       status: error instanceof Error && 'statusCode' in error 
@@ -79,7 +78,6 @@ export async function DELETE(request: NextRequest) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Bulk delete notifications API error:', error)
     const errorResponse = handleAPIError(error)
     return NextResponse.json(errorResponse, { 
       status: error instanceof Error && 'statusCode' in error 

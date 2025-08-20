@@ -1,267 +1,221 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
 import Image from 'next/image'
 import { ImagePlus, X, Loader2 } from 'lucide-react'
 
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { postFormSchema } from '@/lib/posts/post-validation'
-import { validatePostImageFile } from '@/lib/posts/post-image-upload'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { createPost } from '@/lib/posts/post-service'
+import { uploadImage } from '@/lib/posts/image-upload'
 import { getInitials } from '@/lib/format'
-import { POST_CATEGORY_LABELS, CONTENT_LIMITS } from '@/constants'
-import type { PostFormData } from '@/types'
+import { POST_CATEGORIES } from '@/constants'
 import type { Profile } from '@/lib/supabase/types'
-import { toast } from 'sonner'
 
 interface PostFormProps {
-  profile: Profile
-  initialData?: Partial<PostFormData>
-  onSubmit: (data: PostFormData & { image?: File }) => Promise<void>
-  onCancel?: () => void
-  isLoading?: boolean
-  isEditing?: boolean
+  profile?: Profile | null
+  onSuccess?: () => void
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 export function PostForm({
   profile,
-  initialData,
-  onSubmit,
-  onCancel,
-  isLoading = false,
-  isEditing = false
+  onSuccess,
+  open,
+  onOpenChange
 }: PostFormProps) {
+  const [content, setContent] = useState('')
+  const [category, setCategory] = useState<string>('general')
   const [imageFile, setImageFile] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string | null>(initialData?.image_url || null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const form = useForm<PostFormData>({
-    resolver: zodResolver(postFormSchema),
-    defaultValues: {
-      content: initialData?.content || '',
-      category: initialData?.category || 'general',
-      image_url: initialData?.image_url || ''
-    }
-  })
-
-  const watchedContent = form.watch('content')
 
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (!file) return
-
-    try {
-      validatePostImageFile(file)
-      setImageFile(file)
-      
-      // Create preview
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string)
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        setError('Image size must be less than 5MB')
+        return
       }
-      reader.readAsDataURL(file)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Invalid file')
-      event.target.value = '' // Reset input
+      setImageFile(file)
+      setError(null)
     }
   }
 
-  const handleRemoveImage = () => {
-    setImageFile(null)
-    setImagePreview(null)
-    form.setValue('image_url', '')
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
-  }
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!profile) return
 
-  const handleImageUploadClick = () => {
-    fileInputRef.current?.click()
-  }
+    setIsLoading(true)
+    setError(null)
 
-  const handleSubmit = async (data: PostFormData) => {
     try {
-      await onSubmit({
-        ...data,
-        image: imageFile || undefined
+      let imageUrl = null
+      if (imageFile) {
+        imageUrl = await uploadImage(imageFile)
+      }
+
+      await createPost({
+        content: content.trim(),
+        category,
+        imageUrl
       })
+
+      // Reset form
+      setContent('')
+      setCategory('general')
+      setImageFile(null)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+
+      // Close dialog and notify parent
+      onOpenChange?.(false)
+      onSuccess?.()
     } catch (error) {
-      console.error('Post submit error:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to save post')
+      setError('Failed to create post. Please try again.')
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  return (
-    <Card className="w-full">
-      <CardHeader className="pb-4">
-        <div className="flex items-center gap-3">
+  // If no profile is provided, don't render anything
+  if (!profile) return null
+
+  const form = (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="flex items-start gap-3">
+        <div className="shrink-0">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={profile.avatar_url || undefined} alt={profile.username} />
-            <AvatarFallback>
-              {getInitials(profile.username)}
-            </AvatarFallback>
+            {profile.avatar_url ? (
+              <AvatarImage 
+                src={profile.avatar_url} 
+                alt={profile.username || 'User avatar'} 
+              />
+            ) : (
+              <AvatarFallback>
+                {getInitials(profile.username || 'User')}
+              </AvatarFallback>
+            )}
           </Avatar>
-          <div>
-            <CardTitle className="text-lg">
-              {isEditing ? 'Edit Post' : 'Create Post'}
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Share your thoughts with the community
-            </p>
-          </div>
         </div>
-      </CardHeader>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)}>
-          <CardContent className="space-y-4">
-            {/* Post Content */}
-            <FormField
-              control={form.control}
-              name="content"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>What's on your mind?</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Share your thoughts..."
-                      className="resize-none min-h-[100px]"
-                      disabled={isLoading}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    {watchedContent?.length || 0}/{CONTENT_LIMITS.POST_MAX_LENGTH} characters
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        <div className="flex-1 space-y-4">
+          <Textarea
+            placeholder="What's on your mind?"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            rows={3}
+            className="resize-none"
+            required
+            maxLength={280}
+          />
 
-            {/* Category Selection */}
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    disabled={isLoading}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="general">
-                        {POST_CATEGORY_LABELS.general}
-                      </SelectItem>
-                      <SelectItem value="announcement">
-                        {POST_CATEGORY_LABELS.announcement}
-                      </SelectItem>
-                      <SelectItem value="question">
-                        {POST_CATEGORY_LABELS.question}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Choose the most appropriate category for your post
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <div className="flex flex-wrap gap-4">
+            <Select
+              value={category}
+              onValueChange={setCategory}
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                {POST_CATEGORIES.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-            {/* Image Upload */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium">
-                Image (optional)
-              </label>
-              
-              {imagePreview ? (
-                <div className="relative">
-                  <div className="relative rounded-lg overflow-hidden border">
-                    <Image
-                      src={imagePreview}
-                      alt="Post preview"
-                      width={400}
-                      height={300}
-                      className="w-full h-auto object-cover max-h-[300px]"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={handleRemoveImage}
-                      disabled={isLoading}
-                      className="absolute top-2 right-2"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ) : (
+            <div className="flex-1">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                ref={fileInputRef}
+                className="hidden"
+                id="image-upload"
+              />
+              <label htmlFor="image-upload">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={handleImageUploadClick}
-                  disabled={isLoading}
-                  className="w-full h-24 border-dashed"
+                  className="gap-2"
+                  asChild
                 >
-                  <div className="flex flex-col items-center gap-2">
-                    <ImagePlus className="h-6 w-6" />
-                    <span className="text-sm">Add Image</span>
-                  </div>
+                  <span>
+                    <ImagePlus className="h-5 w-5" />
+                    Add Image
+                  </span>
                 </Button>
-              )}
-              
-              <p className="text-xs text-muted-foreground">
-                JPEG or PNG, max 2MB
-              </p>
-              
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png"
-                onChange={handleImageSelect}
-                className="hidden"
-                disabled={isLoading}
-              />
+              </label>
             </div>
-          </CardContent>
+          </div>
 
-          {/* Form Actions */}
-          <div className="flex justify-end gap-3 p-6 pt-0">
-            {onCancel && (
+          {imageFile && (
+            <div className="relative w-full pt-[56.25%] bg-muted rounded-lg overflow-hidden">
+              <Image
+                src={URL.createObjectURL(imageFile)}
+                alt="Selected image"
+                fill
+                className="object-cover"
+              />
               <Button
                 type="button"
-                variant="outline"
-                onClick={onCancel}
-                disabled={isLoading}
+                variant="destructive"
+                size="icon"
+                className="absolute top-2 right-2 h-8 w-8"
+                onClick={() => {
+                  setImageFile(null)
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = ''
+                  }
+                }}
               >
-                Cancel
+                <X className="h-4 w-4" />
               </Button>
-            )}
-            <Button
-              type="submit"
-              disabled={isLoading || !watchedContent?.trim()}
+            </div>
+          )}
+
+          {error && (
+            <p className="text-sm text-destructive">{error}</p>
+          )}
+
+          <div className="flex justify-end">
+            <Button 
+              type="submit" 
+              disabled={!content.trim() || isLoading}
+              className="gap-2"
             >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? 'Update Post' : 'Create Post'}
+              {isLoading && (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              )}
+              Post
             </Button>
           </div>
-        </form>
-      </Form>
-    </Card>
+        </div>
+      </div>
+    </form>
   )
+
+  if (typeof open === 'boolean') {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create Post</DialogTitle>
+          </DialogHeader>
+          {form}
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
+  return form
 }

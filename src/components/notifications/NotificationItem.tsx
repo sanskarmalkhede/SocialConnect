@@ -42,7 +42,6 @@ export function NotificationItem({
       onMarkAsRead?.(notification.id)
       toast.success('Marked as read')
     } catch (error) {
-      console.error('Mark as read error:', error)
       toast.error('Failed to mark as read')
     } finally {
       setIsLoading(false)
@@ -61,7 +60,6 @@ export function NotificationItem({
       onDelete?.(notification.id)
       toast.success('Notification deleted')
     } catch (error) {
-      console.error('Delete notification error:', error)
       toast.error('Failed to delete notification')
     } finally {
       setIsLoading(false)
@@ -135,7 +133,7 @@ export function NotificationItem({
             {/* Post preview for post-related notifications */}
             {notification.post && (
               <p className="text-xs text-muted-foreground mt-1 truncate">
-                "{notification.post.content}"
+                &quot;{notification.post.content}&quot;
               </p>
             )}
             

@@ -57,6 +57,10 @@ export const profileFormSchema = z.object({
  * Validate username format
  */
 export function validateUsernameFormat(username: string): { isValid: boolean; error?: string } {
+  if (!username) {
+    return { isValid: false, error: `Username must be at least ${CONTENT_LIMITS.USERNAME_MIN_LENGTH} characters` }
+  }
+
   if (username.length < CONTENT_LIMITS.USERNAME_MIN_LENGTH) {
     return {
       isValid: false,
@@ -147,6 +151,8 @@ export async function validateUsernameAvailability(
  * Validate bio content
  */
 export function validateBio(bio: string): { isValid: boolean; error?: string } {
+  if (!bio) return { isValid: true }
+
   if (bio.length > CONTENT_LIMITS.BIO_MAX_LENGTH) {
     return {
       isValid: false,

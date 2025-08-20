@@ -22,7 +22,7 @@ export const profileSchema = z.object({
     .max(100, 'Location must be at most 100 characters')
     .optional()
     .or(z.literal('')),
-  profile_visibility: z.enum(['public', 'private', 'followers_only'])
+  profile_visibility: z.enum(['public', 'private'])
 })
 
 // Post Validation
@@ -82,6 +82,25 @@ export const changePasswordSchema = z.object({
   path: ["confirmPassword"]
 })
 
+// Validation Schema Types
+export type ValidationSchema = 
+  | typeof profileSchema 
+  | typeof postSchema 
+  | typeof loginSchema 
+  | typeof registerSchema 
+  | typeof resetPasswordSchema 
+  | typeof changePasswordSchema
+
+export type ValidationError = z.ZodError<any>
+
+export type ValidationResult<T> = {
+  success: true
+  data: T
+} | {
+  success: false
+  error: ValidationError
+}
+
 // File Upload Validation
 export const imageFileSchema = z.object({
   file: z
@@ -93,18 +112,3 @@ export const imageFileSchema = z.object({
     )
 })
 
-// API Response Types
-export type ValidationError = {
-  field: string
-  message: string
-}
-
-export type APIResponse<T = any> = {
-  data?: T
-  error?: {
-    message: string
-    code?: string
-    details?: ValidationError[]
-  }
-  success: boolean
-}

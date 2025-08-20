@@ -1,4 +1,10 @@
-# SocialConnect - Modern Social Media Platform
+# SocialConnect### Technical Features
+- **Error Handling**: Comprehensive error handling with proper error messages
+- **Form Validation**: Input validation with Zod schemas
+- **Responsive Design**: Mobile-first design approach
+- **Type Safety**: Full TypeScript support
+- **API Documentation**: Detailed API documentation with examples
+- **Security**: Proper authentication and authorizationrn Social Media Platform
 
 A full-featured social media platform built with Next.js 15, Supabase, and TypeScript. Features real-time notifications, admin dashboard, comprehensive error handling, and modern UI components.
 
@@ -15,7 +21,7 @@ A full-featured social media platform built with Next.js 15, Supabase, and TypeS
 
 ### Advanced Features
 - **Admin Dashboard** - User management, content moderation, platform analytics
-- **Real-time Updates** - Supabase Realtime for live notifications
+- **Instant Updates** - Regular polling for fresh content
 - **Comprehensive Error Handling** - Global error boundaries and API error handling
 - **Form Validation** - Zod schemas with client and server-side validation
 - **Responsive Design** - Mobile-first design with dark/light mode
@@ -36,7 +42,7 @@ A full-featured social media platform built with Next.js 15, Supabase, and TypeS
 - **Database**: PostgreSQL (Supabase)
 - **Authentication**: Supabase Auth
 - **Styling**: Tailwind CSS, shadcn/ui
-- **Real-time**: Supabase Realtime
+- **Updates**: Regular polling and refresh mechanisms
 - **Validation**: Zod
 - **Testing**: Jest, React Testing Library, Playwright
 - **Deployment**: Vercel (recommended)
@@ -81,7 +87,7 @@ NEXT_PUBLIC_APP_NAME=SocialConnect
 -- Copy and paste the contents of database/setup.sql
 ```
 
-3. Enable Realtime for the `notifications` table in Database > Replication
+3. Ensure proper indexes are created for the `notifications` table
 
 ### 4. Run the Application
 

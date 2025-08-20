@@ -11,7 +11,6 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Logout API error:', error)
     const errorResponse = handleAPIError(error)
     return NextResponse.json(errorResponse, { 
       status: error instanceof Error && 'statusCode' in error 

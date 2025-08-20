@@ -34,7 +34,6 @@ export async function getProfileById(userId: string): Promise<Profile | null> {
 
     return data;
   } catch (error) {
-    console.error("Get profile by ID error:", error);
     throw error;
   }
 }
@@ -68,7 +67,6 @@ export async function getProfileByUsername(
 
     return data;
   } catch (error) {
-    console.error("Get profile by username error:", error);
     throw error;
   }
 }
@@ -126,7 +124,6 @@ export async function updateProfile(
 
     return data;
   } catch (error) {
-    console.error("Update profile error:", error);
     throw error;
   }
 }
@@ -166,7 +163,6 @@ export async function updateProfileAvatar(
 
     return data;
   } catch (error) {
-    console.error("Update profile avatar error:", error);
     throw error;
   }
 }
@@ -200,7 +196,6 @@ export async function isUsernameAvailable(
 
     return !data; // If data exists, username is taken
   } catch (error) {
-    console.error("Check username availability error:", error);
     throw error;
   }
 }
@@ -252,7 +247,6 @@ export async function getProfileFollowers(
       totalPages: Math.ceil((count || 0) / limit),
     };
   } catch (error) {
-    console.error("Get profile followers error:", error);
     throw error;
   }
 }
@@ -304,7 +298,6 @@ export async function getProfileFollowing(
       totalPages: Math.ceil((count || 0) / limit),
     };
   } catch (error) {
-    console.error("Get profile following error:", error);
     throw error;
   }
 }
@@ -334,7 +327,6 @@ export async function isFollowing(
 
     return !!data;
   } catch (error) {
-    console.error("Check is following error:", error);
     throw error;
   }
 }
@@ -367,7 +359,6 @@ export async function followUser(
       throw handleDatabaseError(error);
     }
   } catch (error) {
-    console.error("Follow user error:", error);
     throw error;
   }
 }
@@ -390,7 +381,6 @@ export async function unfollowUser(
       throw handleDatabaseError(error);
     }
   } catch (error) {
-    console.error("Unfollow user error:", error);
     throw error;
   }
 }
@@ -435,7 +425,6 @@ export async function searchProfiles(
       totalPages: Math.ceil((count || 0) / limit),
     };
   } catch (error) {
-    console.error("Search profiles error:", error);
     throw error;
   }
 }

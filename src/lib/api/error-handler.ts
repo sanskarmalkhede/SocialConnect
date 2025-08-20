@@ -1,28 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ZodError } from 'zod'
 import { AuthError } from '@supabase/supabase-js'
+import { AppError } from '@/lib/errors'
 import { 
-  AppError, 
-  AuthenticationError, 
-  AuthorizationError, 
-  ValidationError, 
-  NotFoundError, 
-  ConflictError, 
-  RateLimitError,
-  FileUploadError,
-  NetworkError,
-  createAPIResponse 
-} from '@/lib/errors'
+  ErrorWithCode,
+  APIResponse,
+  APIError,
+  ValidationError
+} from '@/types'
+
+/**
+ * Helper to create API responses for route handlers
+ */
+export function createAPIResponse<T>(data: T, status: number = 200): NextResponse {
+  const response: APIResponse<T> = {
+    data,
+    status
+  }
+  return NextResponse.json(response, { status })
+}
+
+/**
+ * Helper to create error responses for route handlers
+ */
+export function createErrorResponse(error: APIError, status: number): NextResponse {
+  const response: APIResponse<undefined> = {
+    data: undefined,
+    error,
+    status
+  }
+  return NextResponse.json(response, { status })
+}
 
 /**
  * Global API error handler middleware
  */
 export function withErrorHandler(
-  handler: (request: NextRequest, ...args: any[]) => Promise<NextResponse>
+  handler: (request: NextRequest, params?: unknown) => Promise<NextResponse>
 ) {
-  return async (request: NextRequest, ...args: any[]): Promise<NextResponse> => {
+  return async (request: NextRequest, params?: unknown): Promise<NextResponse> => {
     try {
-      return await handler(request, ...args)
+      return await handler(request, params)
     } catch (error) {
       return handleAPIError(error, request)
     }
@@ -47,105 +65,82 @@ export function handleAPIError(error: unknown, request?: NextRequest): NextRespo
 
   // Handle known error types
   if (error instanceof AppError) {
-    return NextResponse.json(
-      createAPIResponse(undefined, {
-        message: error.message,
-        code: error.code
-      }),
-      { status: error.statusCode }
-    )
+    return createErrorResponse({
+      message: error.message,
+      code: error.code || 'UNKNOWN_ERROR'
+    }, error.statusCode)
   }
 
   // Handle Zod validation errors
   if (error instanceof ZodError) {
-    return NextResponse.json(
-      createAPIResponse(undefined, {
-        message: 'Validation failed',
-        code: 'VALIDATION_ERROR',
-        details: error.errors.map(err => ({
-          field: err.path.join('.'),
-          message: err.message,
-          code: err.code
-        }))
-      }),
-      { status: 400 }
-    )
+    const validationErrors: ValidationError[] = error.issues.map(err => ({
+      field: err.path.join('.'),
+      message: err.message
+    }))
+    
+    return createErrorResponse({
+      message: 'Validation failed',
+      code: 'VALIDATION_ERROR',
+      details: validationErrors
+    }, 400)
   }
 
   // Handle Supabase Auth errors
   if (error instanceof AuthError) {
     const { message, status } = mapAuthError(error)
-    return NextResponse.json(
-      createAPIResponse(undefined, {
-        message,
-        code: 'AUTH_ERROR'
-      }),
-      { status }
-    )
+    return createErrorResponse({
+      message,
+      code: 'AUTH_ERROR'
+    }, status)
   }
 
   // Handle database errors
   if (error && typeof error === 'object' && 'code' in error) {
-    const dbError = error as any
+    const dbError = error as ErrorWithCode
     const { message, status, code } = mapDatabaseError(dbError)
     
-    return NextResponse.json(
-      createAPIResponse(undefined, {
-        message,
-        code
-      }),
-      { status }
-    )
+    return createErrorResponse({
+      message,
+      code
+    }, status)
   }
 
   // Handle network/fetch errors
   if (error instanceof TypeError && error.message.includes('fetch')) {
-    return NextResponse.json(
-      createAPIResponse(undefined, {
-        message: 'Network request failed',
-        code: 'NETWORK_ERROR'
-      }),
-      { status: 503 }
-    )
+    return createErrorResponse({
+      message: 'Network request failed',
+      code: 'NETWORK_ERROR'
+    }, 503)
   }
 
   // Handle JSON parsing errors
   if (error instanceof SyntaxError && error.message.includes('JSON')) {
-    return NextResponse.json(
-      createAPIResponse(undefined, {
-        message: 'Invalid JSON in request body',
-        code: 'INVALID_JSON'
-      }),
-      { status: 400 }
-    )
+    return createErrorResponse({
+      message: 'Invalid JSON in request body',
+      code: 'INVALID_JSON'
+    }, 400)
   }
 
   // Handle timeout errors
   if (error instanceof Error && error.name === 'TimeoutError') {
-    return NextResponse.json(
-      createAPIResponse(undefined, {
-        message: 'Request timeout',
-        code: 'TIMEOUT_ERROR'
-      }),
-      { status: 408 }
-    )
+    return createErrorResponse({
+      message: 'Request timeout',
+      code: 'TIMEOUT_ERROR'
+    }, 408)
   }
 
   // Default error response
   const isDevelopment = process.env.NODE_ENV === 'development'
   
-  return NextResponse.json(
-    createAPIResponse(undefined, {
-      message: isDevelopment && error instanceof Error 
-        ? error.message 
-        : 'An unexpected error occurred',
-      code: 'INTERNAL_ERROR',
-      ...(isDevelopment && error instanceof Error && {
-        stack: error.stack
-      })
-    }),
-    { status: 500 }
-  )
+  return createErrorResponse({
+    message: isDevelopment && error instanceof Error 
+      ? error.message 
+      : 'An unexpected error occurred',
+    code: 'INTERNAL_ERROR',
+    ...(isDevelopment && error instanceof Error && {
+      stack: error.stack
+    })
+  }, 500)
 }
 
 /**
@@ -171,9 +166,18 @@ function mapAuthError(error: AuthError): { message: string; status: number } {
 }
 
 /**
+ * Database error with code property
+ */
+interface DatabaseError {
+  code: string
+  message: string
+  constraint?: string
+}
+
+/**
  * Map database errors to appropriate responses
  */
-function mapDatabaseError(error: any): { message: string; status: number; code: string } {
+function mapDatabaseError(error: ErrorWithCode): { message: string; status: number; code: string } {
   // PostgreSQL error codes
   switch (error.code) {
     case '23505': // Unique violation
@@ -227,21 +231,10 @@ export function handleRateLimit(identifier: string, limit: number, windowMs: num
   }
 
   if (record.count >= limit) {
-    return NextResponse.json(
-      createAPIResponse(undefined, {
-        message: 'Rate limit exceeded',
-        code: 'RATE_LIMIT_EXCEEDED'
-      }),
-      { 
-        status: 429,
-        headers: {
-          'Retry-After': Math.ceil((record.resetTime - now) / 1000).toString(),
-          'X-RateLimit-Limit': limit.toString(),
-          'X-RateLimit-Remaining': '0',
-          'X-RateLimit-Reset': Math.ceil(record.resetTime / 1000).toString()
-        }
-      }
-    )
+    return createErrorResponse({
+      message: 'Rate limit exceeded',
+      code: 'RATE_LIMIT_EXCEEDED'
+    }, 429)
   }
 
   record.count++
@@ -256,13 +249,10 @@ export function handleCORS(request: NextRequest): NextResponse | null {
   const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000']
 
   if (origin && !allowedOrigins.includes(origin)) {
-    return NextResponse.json(
-      createAPIResponse(undefined, {
-        message: 'CORS policy violation',
-        code: 'CORS_ERROR'
-      }),
-      { status: 403 }
-    )
+    return createErrorResponse({
+      message: 'CORS policy violation',
+      code: 'CORS_ERROR'
+    }, 403)
   }
 
   return null // CORS check passed
@@ -275,13 +265,10 @@ export function validateRequestSize(request: NextRequest, maxSizeBytes: number =
   const contentLength = request.headers.get('content-length')
   
   if (contentLength && parseInt(contentLength) > maxSizeBytes) {
-    return NextResponse.json(
-      createAPIResponse(undefined, {
-        message: `Request body too large. Maximum size is ${Math.round(maxSizeBytes / 1024 / 1024)}MB`,
-        code: 'REQUEST_TOO_LARGE'
-      }),
-      { status: 413 }
-    )
+    return createErrorResponse({
+      message: `Request body too large. Maximum size is ${Math.round(maxSizeBytes / 1024 / 1024)}MB`,
+      code: 'REQUEST_TOO_LARGE'
+    }, 413)
   }
 
   return null // Size check passed
@@ -329,7 +316,7 @@ export function createHealthCheckResponse(): NextResponse {
  * Middleware wrapper for API routes with comprehensive error handling
  */
 export function createAPIRoute(
-  handler: (request: NextRequest, ...args: any[]) => Promise<NextResponse>,
+  handler: (request: NextRequest, params?: unknown) => Promise<NextResponse>,
   options: {
     rateLimit?: { limit: number; windowMs: number }
     maxRequestSize?: number
@@ -337,7 +324,7 @@ export function createAPIRoute(
     requireAdmin?: boolean
   } = {}
 ) {
-  return async (request: NextRequest, ...args: any[]): Promise<NextResponse> => {
+  return async (request: NextRequest, params?: unknown): Promise<NextResponse> => {
     try {
       // CORS check
       const corsError = handleCORS(request)
@@ -363,7 +350,7 @@ export function createAPIRoute(
       }
 
       // Execute the handler
-      return await handler(request, ...args)
+      return await handler(request, params)
     } catch (error) {
       return handleAPIError(error, request)
     }

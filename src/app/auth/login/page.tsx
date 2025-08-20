@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { LoginForm } from '@/components/auth/LoginForm'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 
 export const metadata: Metadata = {
   title: 'Sign In - SocialConnect',
@@ -30,9 +30,10 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent>
             <LoginForm />
-            
-            <div className="mt-6 text-center text-sm">
-              <span className="text-muted-foreground">Don't have an account? </span>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-4">
+            <div className="text-center text-sm">
+              <span className="text-muted-foreground">Don&apos;t have an account? </span>
               <Link 
                 href="/auth/register" 
                 className="text-primary hover:underline font-medium"
@@ -41,15 +42,8 @@ export default function LoginPage() {
               </Link>
             </div>
             
-            <div className="mt-4 text-center">
-              <Link 
-                href="/auth/reset-password" 
-                className="text-sm text-muted-foreground hover:text-primary hover:underline"
-              >
-                Forgot your password?
-              </Link>
-            </div>
-          </CardContent>
+            {/* Reset password removed in MVP */}
+          </CardFooter>
         </Card>
       </div>
     </div>

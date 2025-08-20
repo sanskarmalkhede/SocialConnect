@@ -25,10 +25,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- 7. Add post count to profiles
 \i 007_add_post_count_to_profiles.sql
 
--- 8. Create bookmarks table
-\i 008_create_bookmarks_table.sql
-
--- 9. Add user status fields
+-- Add user status fields
 \i 009_add_user_status_fields.sql
 
 -- Create a view for feed queries with user information
