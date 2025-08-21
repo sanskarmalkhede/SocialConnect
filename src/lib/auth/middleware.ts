@@ -51,8 +51,8 @@ export async function validateToken(token: string): Promise<{ user: User; profil
     }
 
     return { user, profile }
-  } catch (error) {
-    throw error instanceof AuthenticationError ? error : new AuthenticationError('Token validation failed')
+  } catch (_error) {
+    throw _error instanceof AuthenticationError ? _error : new AuthenticationError('Token validation failed')
   }
 }
 
@@ -110,7 +110,7 @@ export async function optionalAuth(request: NextRequest): Promise<{ user: User; 
     }
 
     return await validateToken(token)
-  } catch (error) {
+  } catch (_error) {
     // don't throw for optional auth
     return null
   }
@@ -123,7 +123,7 @@ export async function getUserFromRequest(request: NextRequest): Promise<User | n
   try {
     const auth = await optionalAuth(request)
     return auth?.user || null
-  } catch (error) {
+  } catch (_error) {
     return null
   }
 }

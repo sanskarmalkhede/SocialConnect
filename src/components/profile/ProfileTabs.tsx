@@ -7,13 +7,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { formatRelativeTime, getInitials } from '@/lib/format'
-import type { Profile } from '@/lib/supabase/types'
+import { getInitials } from '@/lib/format'
+import type { Profile, Post } from '@/types'
 
 interface ProfileTabsProps {
   profile: Profile
   isOwnProfile: boolean
-  posts?: any[] // Will be properly typed when we implement posts
+  posts?: Post[] // Will be properly typed when we implement posts
   followers?: Profile[]
   following?: Profile[]
   isLoading?: boolean

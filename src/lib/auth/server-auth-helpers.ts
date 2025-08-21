@@ -12,7 +12,7 @@ export async function optionalAuthMiddleware(req: NextRequest) {
     const supabaseMiddleware = createMiddlewareClient({ req, res: NextResponse.next() })
     const { data: { session } } = await supabaseMiddleware.auth.getSession()
     if (session) return session
-  } catch (err) {
+  } catch (_err) {
     // ignore and fallback to header-based token
   }
 
@@ -25,7 +25,7 @@ export async function optionalAuthMiddleware(req: NextRequest) {
       if (error || !data.user) return null
       // Return a minimal session-like object compatible with callers
       return { user: data.user, access_token: token }
-    } catch (err) {
+    } catch (_err) {
       return null
     }
   }

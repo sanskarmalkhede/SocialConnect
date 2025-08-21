@@ -91,7 +91,7 @@ export type ValidationSchema =
   | typeof resetPasswordSchema 
   | typeof changePasswordSchema
 
-export type ValidationError = z.ZodError<any>
+export type ValidationError = z.ZodError<unknown>
 
 export type ValidationResult<T> = {
   success: true

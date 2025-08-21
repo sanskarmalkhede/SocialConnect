@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50) // Max 50 results per page
 
     // Optional authentication (for future features like showing follow status)
-    const auth = await optionalAuth(request)
+    const _auth = await optionalAuth(request)
 
     if (!query.trim()) {
       return NextResponse.json(
@@ -34,11 +34,6 @@ export async function GET(request: NextRequest) {
       { status: 200 }
     )
   } catch (error) {
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }

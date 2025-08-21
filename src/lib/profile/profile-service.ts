@@ -1,6 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { handleDatabaseError } from '@/lib/errors'
-import type { Profile } from '@/types'
+import type { Profile, Post } from '@/types'
 
 export async function getProfileByUsername(username: string, currentUserId?: string): Promise<Profile> {
   const { data, error } = await supabaseAdmin
@@ -18,7 +18,7 @@ export async function getProfileByUsername(username: string, currentUserId?: str
     throw handleDatabaseError(error)
   }
 
-  const profile = data as any
+  const profile = data
 
   // Check if the current user is following this profile
   let isFollowing = false
@@ -36,9 +36,9 @@ export async function getProfileByUsername(username: string, currentUserId?: str
     ...profile,
     follower_count: profile.followers[0]?.count || 0,
     following_count: profile.following[0]?.count || 0,
-    posts: profile.posts.map((p: any) => ({
+    posts: profile.posts.map((p: Post) => ({
       ...p,
-      is_liked_by_user: currentUserId ? p.likes.some((l: any) => l.user_id === currentUserId) : false
+      is_liked_by_user: currentUserId ? p.likes.some((l: { user_id: string }) => l.user_id === currentUserId) : false
     })),
     is_following: isFollowing
   } as Profile

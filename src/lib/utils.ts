@@ -15,7 +15,7 @@ export function sleep(ms: number): Promise<void> {
 /**
  * Debounce function calls
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: Parameters<T>) => ReturnType<T>>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
@@ -40,7 +40,7 @@ export function isValidUrl(string: string): boolean {
   try {
     new URL(string)
     return true
-  } catch (_) {
+  } catch (_: unknown) { // eslint-disable-line @typescript-eslint/no-unused-vars
     return false
   }
 }

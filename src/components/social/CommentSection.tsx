@@ -29,7 +29,7 @@ interface CommentSectionProps {
 }
 
 export function CommentSection({
-  postId,
+  postId: _postId,
   comments,
   currentUser,
   isLoading = false,

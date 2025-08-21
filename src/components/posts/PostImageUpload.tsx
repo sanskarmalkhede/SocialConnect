@@ -6,7 +6,6 @@ import { ImagePlus, X, Loader2, Upload } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { validatePostImageFile } from '@/lib/posts/post-image-upload'
-import { formatFileSize } from '@/lib/format'
 import { toast } from 'sonner'
 
 interface PostImageUploadProps {

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-helpers'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -10,12 +11,14 @@ import { Users, MessageSquare, Heart, TrendingUp } from 'lucide-react'
 export default function Home() {
   const { user, isLoading } = useAuth()
 
+    const router = useRouter()
+
   useEffect(() => {
-    // Redirect authenticated users to dashboard
+    // Redirect authenticated users to the feed
     if (user && !isLoading) {
-      window.location.href = '/dashboard'
+      router.push('/feed')
     }
-  }, [user, isLoading])
+  }, [user, isLoading, router])
 
   if (isLoading) {
     return (

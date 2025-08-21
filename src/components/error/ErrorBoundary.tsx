@@ -113,7 +113,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
 // Hook version for functional components
 export function useErrorHandler() {
-  return (error: Error, errorInfo?: ErrorInfo) => {
+  return (_error: Error, _errorInfo?: ErrorInfo) => {
     // In production, log to error reporting service
     if (process.env.NODE_ENV === 'production') {
       // logErrorToService(error, errorInfo)

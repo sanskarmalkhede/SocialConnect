@@ -43,7 +43,7 @@ export function validatePostContent(content: string): { isValid: boolean; error?
 export function validatePostCategory(category: string): { isValid: boolean; error?: string } {
   const validCategories = Object.values(POST_CATEGORIES)
   
-  if (!validCategories.includes(category as any)) {
+  if (!validCategories.includes(category)) {
     return {
       isValid: false,
       error: 'Invalid post category'

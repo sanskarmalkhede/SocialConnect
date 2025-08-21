@@ -42,13 +42,7 @@ export async function GET(request: NextRequest) {
         )
     }
   } catch (error) {
-    console.error('Get notifications API error:', error)
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }
 
@@ -76,13 +70,7 @@ export async function PATCH(request: NextRequest) {
         )
     }
   } catch (error) {
-    console.error('Update notifications API error:', error)
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }
 
@@ -97,12 +85,6 @@ export async function DELETE(request: NextRequest) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Delete all notifications API error:', error)
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }

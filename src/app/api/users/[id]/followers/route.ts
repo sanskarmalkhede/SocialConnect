@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getProfileFollowers } from '@/lib/profile/profile-service'
-import { handleAPIError, createAPIResponse } from '@/lib/errors'
+import { handleAPIError, createAPIResponse } from '@/lib/api/error-handler'
 import { optionalAuth } from '@/lib/auth/middleware'
 
 interface RouteParams {
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50) // Max 50 results per page
 
     // Optional authentication (for future visibility checks)
-    const auth = await optionalAuth(request)
+    const _auth = await optionalAuth(request)
 
     // Get followers
     const result = await getProfileFollowers(id, page, limit)
@@ -27,12 +27,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Get profile followers API error:', error)
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }

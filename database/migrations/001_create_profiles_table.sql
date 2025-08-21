@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   location TEXT,
   role VARCHAR(10) DEFAULT 'user' CHECK (role IN ('user', 'admin')),
   profile_visibility VARCHAR(20) DEFAULT 'public' 
-    CHECK (profile_visibility IN ('public', 'private')),
+    CHECK (profile_visibility IN ('public', 'private', 'followers_only')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

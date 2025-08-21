@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getProfileById, updateProfile } from '@/lib/profile/profile-service'
 import { updateUserAvatar } from '@/lib/profile/avatar-upload'
 import { profileSchema } from '@/lib/validations'
-import { handleAPIError, createAPIResponse } from '@/lib/errors'
+import { handleAPIError, createAPIResponse } from '@/lib/api/error-handler'
 import { authenticateRequest } from '@/lib/auth/middleware'
+import { ZodIssue } from 'zod'
+import { Profile } from '@/types'
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,13 +28,7 @@ export async function GET(request: NextRequest) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Get current user profile API error:', error)
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }
 
@@ -56,7 +52,7 @@ export async function PUT(request: NextRequest) {
         createAPIResponse(undefined, {
           message: 'Invalid input data',
           code: 'VALIDATION_ERROR',
-          details: validationResult.error.issues.map((err: any) => ({
+          details: validationResult.error.issues.map((err: ZodIssue) => ({
             field: err.path.join('.'),
             message: err.message
           }))
@@ -75,7 +71,7 @@ export async function PUT(request: NextRequest) {
       updatedProfile = await updateProfile(user.id, { 
         ...validationResult.data,
         avatar_url: avatarUrl 
-      } as any)
+      } as Partial<Profile>)
     }
 
     return NextResponse.json(
@@ -83,13 +79,7 @@ export async function PUT(request: NextRequest) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Update current user profile API error:', error)
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }
 
@@ -100,7 +90,7 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json()
     
     // For PATCH, we only update provided fields
-    const updateData: any = {}
+    const updateData: Partial<Profile> = {}
     
     if (body.username !== undefined) updateData.username = body.username
     if (body.bio !== undefined) updateData.bio = body.bio
@@ -115,7 +105,7 @@ export async function PATCH(request: NextRequest) {
         createAPIResponse(undefined, {
           message: 'Invalid input data',
           code: 'VALIDATION_ERROR',
-          details: validationResult.error.issues.map((err: any) => ({
+          details: validationResult.error.issues.map((err: ZodIssue) => ({
             field: err.path.join('.'),
             message: err.message
           }))
@@ -131,12 +121,6 @@ export async function PATCH(request: NextRequest) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Patch current user profile API error:', error)
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }

@@ -4,13 +4,13 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { Menu, Bell, Home, User, Settings, LogOut } from 'lucide-react'
+import { Menu, Home, User, Settings, LogOut } from 'lucide-react'
 import { NotificationBadge } from '@/components/notifications/NotificationBadge'
 import { useAuth } from '@/lib/auth/auth-helpers'
 import { useRouter } from 'next/navigation'
 
 export function Header() {
-  const { user, signOut } = useAuth()
+  const { user: _user, profile, signOut } = useAuth()
   const router = useRouter()
 
   const handleLogout = async () => {
@@ -42,13 +42,15 @@ export function Header() {
               <Home className="h-5 w-5" />
               Feed
             </Link>
-            <Link
-              href={`/profile/${user?.username}`}
-              className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
-            >
-              <User className="h-5 w-5" />
-              Profile
-            </Link>
+                        {profile?.username && typeof profile.username === 'string' && (
+              <Link
+                href={`/profile/${profile.username}`}
+                className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+              >
+                <User className="h-5 w-5" />
+                Profile
+              </Link>
+            )}
             <Link
               href="/settings"
               className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"

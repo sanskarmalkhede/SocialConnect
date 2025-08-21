@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { loginSchema } from '@/lib/validations'
 import { loginUser, getUserProfile } from '@/lib/auth/auth-helpers'
-import { handleAPIError, createAPIResponse } from '@/lib/errors'
+import { handleAPIError, createAPIResponse } from '@/lib/api/error-handler'
 import { checkRateLimit } from '@/lib/auth/middleware'
+import { ZodIssue } from 'zod'
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
         createAPIResponse(undefined, {
           message: 'Invalid input data',
           code: 'VALIDATION_ERROR',
-          details: validationResult.error.issues.map((err: any) => ({
+          details: validationResult.error.issues.map((err: ZodIssue) => ({
             field: err.path.join('.'),
             message: err.message
           }))
@@ -49,18 +50,13 @@ export async function POST(request: NextRequest) {
         user: {
           id: user.id,
           email: user.email,
-          email_confirmed_at: user.email_confirmed_at
+          email_confirmed_at: user.email.confirmed_at
         },
         profile
       }),
       { status: 200 }
     )
   } catch (error) {
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }

@@ -128,7 +128,7 @@ export interface UploadProgress {
 export async function uploadAvatarWithProgress(
   userId: string, 
   file: File,
-  onProgress?: (progress: UploadProgress) => void
+  _onProgress?: (progress: UploadProgress) => void // Prefixed with _
 ): Promise<string> {
   // For now, just use the regular upload
   // In the future, this could be enhanced with progress tracking

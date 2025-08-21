@@ -24,13 +24,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Follow user API error:', error)
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }
 
@@ -49,13 +43,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Unfollow user API error:', error)
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }
 
@@ -74,12 +62,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Check follow status API error:', error)
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }

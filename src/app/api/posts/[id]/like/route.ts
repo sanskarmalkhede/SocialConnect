@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server'
 import { likePost, unlikePost } from '@/lib/social/like-service'
 import { handleAPIError, createAPIResponse } from '@/lib/errors'
@@ -20,12 +19,7 @@ export async function POST(
       { status: 200 }
     )
   } catch (error) {
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }
 
@@ -45,11 +39,6 @@ export async function DELETE(
       { status: 200 }
     )
   } catch (error) {
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }

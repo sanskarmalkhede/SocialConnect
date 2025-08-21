@@ -14,7 +14,7 @@ export async function uploadImage(file: File): Promise<string> {
     const filePath = `posts/${fileName}`
 
     // Upload the file to Supabase Storage
-    const { data, error: uploadError } = await supabase.storage
+    const { data: _data, error: uploadError } = await supabase.storage
       .from('public')
       .upload(filePath, file, {
         cacheControl: '3600',

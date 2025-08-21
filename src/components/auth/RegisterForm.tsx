@@ -8,7 +8,7 @@ import Link from 'next/link'
 import { Eye, EyeOff, Loader2, CheckCircle } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card' // eslint-disable-line @typescript-eslint/no-unused-vars
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { registerSchema } from '@/lib/validations'

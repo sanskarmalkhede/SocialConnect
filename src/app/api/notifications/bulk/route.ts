@@ -43,12 +43,7 @@ export async function PATCH(request: NextRequest) {
         )
     }
   } catch (error) {
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }
 
@@ -78,11 +73,6 @@ export async function DELETE(request: NextRequest) {
       { status: 200 }
     )
   } catch (error) {
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Heart, MessageCircle, MoreHorizontal, Trash2, Edit, Bookmark } from 'lucide-react'
+import { Heart, MessageCircle, MoreHorizontal, Trash2, Bookmark } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
@@ -45,7 +45,7 @@ export function PostCard({ post, onPostDeleted }: PostCardProps) {
       } else {
         await likePost(post.id, user.id)
       }
-    } catch (error) {
+    } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
       // Revert optimistic update on error
       setIsLiked(originalIsLiked)
       setLikeCount(originalLikeCount)
@@ -58,10 +58,10 @@ export function PostCard({ post, onPostDeleted }: PostCardProps) {
     if (!user || (user.id !== post.author_id && profile?.role !== 'admin')) return
 
     try {
-      await deletePost(post.id)
+      await deletePost(post.id, user.id, profile?.role === 'admin')
       toast({ title: 'Success', description: 'Post deleted successfully.' })
       onPostDeleted?.(post.id)
-    } catch (error) {
+    } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
       toast({ title: 'Error', description: 'Failed to delete post.', variant: 'destructive' })
     }
   }

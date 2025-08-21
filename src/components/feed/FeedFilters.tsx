@@ -1,11 +1,11 @@
 import React from 'react'
 
 export interface FeedFiltersProps {
-  filters: Record<string, any>
-  onFiltersChange: (filters: Record<string, any>) => void
+  filters: Record<string, unknown>
+  onFiltersChange: (filters: Record<string, unknown>) => void
 }
 
-export const FeedFilters: React.FC<FeedFiltersProps> = ({ filters, onFiltersChange }) => {
+export const FeedFilters: React.FC<FeedFiltersProps> = ({ filters: _filters, onFiltersChange }) => {
   // Placeholder UI for filters
   return (
     <div className="p-4 border rounded-lg bg-muted mb-4">

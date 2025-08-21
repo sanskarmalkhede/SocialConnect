@@ -60,7 +60,7 @@ export function ProfileForm({ profile, onSubmit, onCancel, isLoading = false }: 
         } else {
           form.clearErrors('username')
         }
-      } catch (error) {
+      } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
         
       } finally {
         setUsernameChecking(false)

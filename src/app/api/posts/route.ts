@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPosts, createPost } from '@/lib/posts/post-service'
-import { uploadPostImage } from '@/lib/posts/post-image-upload'
 import { validatePostForCreation } from '@/lib/posts/post-validation'
 import { handleAPIError, createAPIResponse } from '@/lib/api/error-handler'
 import { ValidationError } from '@/lib/errors'
 import { authenticateRequest, optionalAuth } from '@/lib/auth/middleware'
-import type { APIError } from '@/types/api'
-import type { PostFormData } from '@/types'
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,12 +27,7 @@ export async function GET(request: NextRequest) {
 
     return createAPIResponse(result)
   } catch (error) {
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as APIError).statusCode || 500
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }
 

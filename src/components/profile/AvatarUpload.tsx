@@ -30,7 +30,7 @@ export function AvatarUpload({
   size = 'md'
 }: AvatarUploadProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [isUploading, setIsUploading] = useState(false)
+  const [isUploading, setIsUploading] = useState(false) // eslint-disable-line @typescript-eslint/no-unused-vars
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {

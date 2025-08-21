@@ -81,7 +81,8 @@ export const ROUTES = {
   ADMIN: '/admin',
   ADMIN_USERS: '/admin/users',
   ADMIN_POSTS: '/admin/posts',
-  ADMIN_STATS: '/admin/stats'
+  ADMIN_STATS: '/admin/stats',
+  RESET_PASSWORD: '/auth/reset-password'
 } as const
 
 // API Endpoints

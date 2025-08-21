@@ -1,9 +1,8 @@
 'use client'
 
 import { useEffect } from 'react'
-import { AlertTriangle, CheckCircle, Info, X, XCircle } from 'lucide-react'
 import { toast, Toaster } from 'sonner'
-import { Button } from '@/components/ui/button'
+import { APIError } from '@/types' // Import APIError
 
 export interface ToastOptions {
   title?: string
@@ -78,7 +77,7 @@ export const errorToast = {
 
   network: (action?: string) => {
     toast.error('Network Error', {
-      description: `Failed to ${action || 'complete request'}. Please check your connection.`,
+      description: `Failed to ${action || 'complete request'}. Please check your connection.`, 
       duration: 6000,
       action: {
         label: 'Retry',
@@ -121,7 +120,7 @@ export const errorToast = {
 }
 
 // Global error handler for API responses
-export function handleAPIError(error: any, context?: string) {
+export function handleAPIError(error: unknown, context?: string) {
   console.error('API Error:', error)
 
   if (!error) {
@@ -129,8 +128,14 @@ export function handleAPIError(error: any, context?: string) {
     return
   }
 
-  // Handle different error formats
-  if (error.error) {
+  // Simpler type guard for APIError
+  const isSimpleAPIError = (err: unknown): err is { error: { message: string, code?: string, details?: any } } => {
+    return typeof err === 'object' && err !== null && 'error' in err &&
+           typeof (err as any).error === 'object' && (err as any).error !== null &&
+           'message' in (err as any).error;
+  };
+
+  if (isSimpleAPIError(error)) {
     const { message, code, details } = error.error
 
     switch (code) {
@@ -163,7 +168,7 @@ export function handleAPIError(error: any, context?: string) {
           description: context ? `Failed to ${context}` : undefined
         })
     }
-  } else if (error.message) {
+  } else if (error instanceof Error) {
     errorToast.error(error.message, {
       description: context ? `Failed to ${context}` : undefined
     })
@@ -177,11 +182,11 @@ export function handleAPIError(error: any, context?: string) {
 // React hook for handling errors in components
 export function useErrorHandler() {
   return {
-    handleError: (error: any, context?: string) => {
+    handleError: (error: unknown, context?: string) => {
       handleAPIError(error, context)
     },
     
-    handleAsyncError: async (asyncFn: () => Promise<any>, context?: string) => {
+    handleAsyncError: async <T>(asyncFn: () => Promise<T>, context?: string): Promise<T | undefined> => {
       try {
         return await asyncFn()
       } catch (error) {
@@ -241,22 +246,22 @@ export function useErrorBoundary() {
 // Utility functions for common error scenarios
 export const errorUtils = {
   // Handle form submission errors
-  handleFormError: (error: any, formName?: string) => {
+  handleFormError: (error: unknown, formName?: string) => {
     handleAPIError(error, formName ? `submit ${formName}` : 'submit form')
   },
 
   // Handle data loading errors
-  handleLoadError: (error: any, resourceName?: string) => {
+  handleLoadError: (error: unknown, resourceName?: string) => {
     handleAPIError(error, resourceName ? `load ${resourceName}` : 'load data')
   },
 
   // Handle save/update errors
-  handleSaveError: (error: any, resourceName?: string) => {
+  handleSaveError: (error: unknown, resourceName?: string) => {
     handleAPIError(error, resourceName ? `save ${resourceName}` : 'save changes')
   },
 
   // Handle delete errors
-  handleDeleteError: (error: any, resourceName?: string) => {
+  handleDeleteError: (error: unknown, resourceName?: string) => {
     handleAPIError(error, resourceName ? `delete ${resourceName}` : 'delete item')
   },
 

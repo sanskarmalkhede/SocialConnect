@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPostById, updatePost, deletePost } from '@/lib/posts/post-service'
 import { uploadPostImage, deletePostImage } from '@/lib/posts/post-image-upload'
 import { validatePostForUpdate } from '@/lib/posts/post-validation'
-import { handleAPIError, createAPIResponse, NotFoundError } from '@/lib/errors'
+import { handleAPIError, createAPIResponse } from '@/lib/api/error-handler'
 import { authenticateRequest, optionalAuth, requireOwnershipOrAdmin } from '@/lib/auth/middleware'
 
 interface RouteParams {
@@ -35,13 +35,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Get post API error:', error)
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }
 
@@ -118,13 +112,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Update post API error:', error)
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }
 
@@ -158,12 +146,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Delete post API error:', error)
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }

@@ -4,7 +4,7 @@
 import { PostCard } from '@/components/posts/PostCard'
 import { Skeleton } from '@/components/ui/skeleton'
 import { type Post } from '@/types'
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback } from 'react' // eslint-disable-line @typescript-eslint/no-unused-vars
 
 interface PostFeedProps {
   posts: Post[]

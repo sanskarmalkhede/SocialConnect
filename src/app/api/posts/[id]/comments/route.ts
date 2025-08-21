@@ -29,13 +29,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       { status: 201 }
     )
   } catch (error) {
-    console.error('Create comment API error:', error)
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }
 
@@ -54,12 +48,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Get post comments API error:', error)
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }

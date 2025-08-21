@@ -5,7 +5,7 @@ import {
   deleteNotification
 } from '@/lib/notifications/notification-service'
 import { handleAPIError, createAPIResponse } from '@/lib/api/error-handler'
-import { NotFoundError, AuthorizationError } from '@/lib/errors'
+import { AuthorizationError } from '@/lib/errors'
 import { authenticateRequest } from '@/lib/auth/auth-helpers'
 
 interface RouteParams {
@@ -40,13 +40,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Get notification API error:', error)
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }
 
@@ -78,13 +72,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         )
     }
   } catch (error) {
-    console.error('Update notification API error:', error)
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }
 
@@ -103,12 +91,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Delete notification API error:', error)
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
+    return handleAPIError(error)
   }
 }

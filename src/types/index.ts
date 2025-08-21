@@ -1,90 +1,60 @@
-import type { User } from '@supabase/supabase-js'
-import type { Profile, Post, Comment, Notification } from '@/lib/supabase/types'
+import { Database } from './supabase'
 
-// Extended User type with profile
-export interface AuthUser extends User {
-  profile?: Profile
+// Re-exporting generated types for convenience
+export type Json = Database['public']['Tables']['posts']['Row']['content']
+
+// Core Models
+export type Profile = Database['public']['Tables']['profiles']['Row'] & {
+  posts?: Post[]
+  follower_count: number
+  following_count: number
+  post_count: number
+  is_following?: boolean
 }
 
-// Form Types
-export interface LoginFormData {
-  email: string
-  password: string
+export type Post = Database['public']['Tables']['posts']['Row'] & {
+  author: Profile
+  likes: { user_id: string }[]
+  is_liked_by_user?: boolean
 }
 
-export interface RegisterFormData {
-  email: string
-  password: string
-  confirmPassword: string
-  username: string
+export type Notification = Database['public']['Tables']['notifications']['Row'] & {
+  sender: Profile
 }
 
-export interface PostFormData {
+export type Comment = Database['public']['Tables']['comments']['Row'] & {
+  author: Profile
+}
+
+// Form Data
+export type RegisterFormData = {
+  email: string;
+  password: string;
+  confirmPassword: string;
+  username: string;
+};
+
+export type LoginFormData = {
+  email: string;
+  password: string;
+};
+
+export type ChangePasswordFormData = {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+};
+
+export type PostFormData = {
   content: string
-  category?: string
-  imageUrl?: string | null
+  image_url?: string
 }
 
-// Error Handling Types
-export interface ErrorWithCode extends Error {
-  code?: string
-  status?: number
-  constraint?: string
-}
-
-// API Response Types
-export interface APIError {
-  message: string
-  code: string
-  details?: ValidationError[]
-}
-
-// Validation Error Types
-export interface ValidationError {
-  field: string
-  message: string
-}
-
-export interface APIResponse<T = unknown> {
-  data: T
-  error?: APIError
-  status: number
-}
-
-export interface ProfileFormData {
-  username: string
-  bio?: string | null
-  avatar_url?: string | null
-  website?: string | null
-  location?: string | null
-  profile_visibility?: 'public' | 'private'
-}
-
-// Feed Types
-export interface FeedFilters {
-  category?: string
-  timeframe?: 'hour' | 'day' | 'week' | 'month' | 'year' | 'all'
-  sortBy?: 'newest' | 'oldest' | 'most_liked' | 'most_commented'
-  authorIds?: string[]
-  excludeAuthorIds?: string[]
-}
-
+// API & Feed
 export interface FeedStatsData {
-  totalPosts: number
-  totalUsers: number
-  topCategories: { category: string; count: number }[]
-  postsToday: number
-  activeUsers: number
-  engagementRate: number
-}
-
-// Social Interactions
-export interface LikeData {
-  post_id: string
-  user_id: string
-}
-
-export interface FollowData {
-  follower_id: string
-  following_id: string
+  followingCount?: number
+  newPostsLast24h?: number
+  totalPosts?: number
+  totalUsers?: number
+  lastUpdated: string
 }

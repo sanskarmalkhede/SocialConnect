@@ -17,9 +17,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ data: profile })
   } catch (error) {
-    return NextResponse.json(
-      { error: { message: error instanceof Error ? error.message : 'Internal server error' } },
-      { status: 500 }
-    )
+    return handleAPIError(error)
   }
 }

@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase/client'
 import { handleDatabaseError } from '@/lib/errors'
 
-export async function likePost(postId: string, userId: string) {
+export async function likePost(userId: string, postId: string) {
   const { error } = await supabase.from('likes').insert({ post_id: postId, user_id: userId })
   if (error) {
     throw handleDatabaseError(error)

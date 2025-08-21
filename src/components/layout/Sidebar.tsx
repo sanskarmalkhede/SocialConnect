@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation'
 import { NotificationBadge } from '@/components/notifications/NotificationBadge'
 
 export function Sidebar() {
-  const { user, signOut } = useAuth()
+  const { user: _user, profile, signOut } = useAuth()
   const router = useRouter()
 
   const handleLogout = async () => {
@@ -33,13 +33,15 @@ export function Sidebar() {
           <Home className="h-4 w-4" />
           Feed
         </Link>
-        <Link
-          href={`/profile/${user?.username}`}
-          className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-        >
-          <User className="h-4 w-4" />
-          Profile
-        </Link>
+                {profile?.username && typeof profile.username === 'string' && (
+          <Link
+            href={`/profile/${profile.username}`}
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+          >
+            <User className="h-4 w-4" />
+            Profile
+          </Link>
+        )}
         <Link
           href="/notifications"
           className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"

@@ -1,18 +1,37 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Bell, Check, CheckCheck, Trash2, Settings, X } from 'lucide-react'
+import { Bell, CheckCheck, X } from 'lucide-react' // Removed unused icons
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu' // Removed unused DropdownMenu components
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
 import { NotificationItem } from './NotificationItem'
-import { getUserNotifications, markAllNotificationsAsRead, getUnreadNotificationCount } from '@/lib/notifications/notification-service'
-import type { Notification, Profile } from '@/lib/supabase/types'
+import { getUserNotifications, markAllNotificationsAsRead, getUnreadNotificationCount } from '@/lib/notifications/notification-service' // Removed markNotificationAsRead, deleteNotification
+import type { Notification, Profile } from '@/types' // Changed from @/lib/supabase/types
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+
+interface NotificationDropdownProps {
+  currentUser?: Profile
+  className?: string
+}
+
+import { useState, useEffect, useCallback } from 'react'
+import { Bell, CheckCheck, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Skeleton } from '@/components/ui/skeleton'
+import { NotificationItem } from './NotificationItem'
+import { getUserNotifications, markAllNotificationsAsRead } from '@/lib/notifications/notification-service'
+import type { Notification, Profile } from '@/types'
+import { cn } from '@/lib/utils'
+import { useNotificationRealtime } from '@/hooks/use-notification-realtime'
 
 interface NotificationDropdownProps {
   currentUser?: Profile
@@ -28,30 +47,10 @@ export function NotificationDropdown({
   const [isLoading, setIsLoading] = useState(false)
   const [hasMore, setHasMore] = useState(false)
   const [page, setPage] = useState(1)
-  const [unreadCount, setUnreadCount] = useState(0)
+  
+  const { unreadCount, realtimeNotifications, isConnected, markAsRead, removeNotification } = useNotificationRealtime(currentUser?.id);
 
-  // Load initial notifications when dropdown opens
-  useEffect(() => {
-    if (isOpen && currentUser && notifications.length === 0) {
-      loadNotifications()
-    }
-  }, [isOpen, currentUser])
-
-  // Update local notifications from realtime
-  useEffect(() => {
-    if (realtimeNotifications.length > 0) {
-      setNotifications(realtimeNotifications)
-    }
-  }, [realtimeNotifications])
-
-  // Load initial unread count
-  useEffect(() => {
-    if (currentUser) {
-      loadUnreadCount()
-    }
-  }, [currentUser])
-
-  const loadNotifications = async (pageNum: number = 1) => {
+  const loadNotifications = useCallback(async (pageNum: number = 1) => {
     if (!currentUser || isLoading) return
 
     setIsLoading(true)
@@ -60,7 +59,6 @@ export function NotificationDropdown({
       
       if (pageNum === 1) {
         setNotifications(result.notifications)
-        setRealtimeNotifications(result.notifications)
       } else {
         setNotifications(prev => [...prev, ...result.notifications])
       }
@@ -73,25 +71,26 @@ export function NotificationDropdown({
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [currentUser, isLoading])
 
-  const loadUnreadCount = async () => {
-    if (!currentUser) return
-
-    try {
-      const count = await getUnreadNotificationCount(currentUser.id)
-      setUnreadCount(count)
-    } catch (error) {
-      console.error('Load unread count error:', error)
+  useEffect(() => {
+    if (isOpen && currentUser && notifications.length === 0) {
+      loadNotifications()
     }
-  }
+  }, [isOpen, currentUser, notifications.length, loadNotifications])
+
+  useEffect(() => {
+    if (realtimeNotifications.length > 0) {
+      setNotifications(realtimeNotifications)
+    }
+  }, [realtimeNotifications])
 
   const handleMarkAllAsRead = async () => {
     if (!currentUser) return
 
     try {
       await markAllNotificationsAsRead(currentUser.id)
-      realtimeMarkAllAsRead()
+      // The unread count will be updated by the realtime hook's UPDATE listener
       toast.success('All notifications marked as read')
     } catch (error) {
       console.error('Mark all as read error:', error)

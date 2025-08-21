@@ -1,30 +1,31 @@
- 'use client'
+'use client'
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { NotificationList } from '@/components/notifications/NotificationItem'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ArrowLeft, Bell, CheckCheck, Trash2 } from 'lucide-react'
-import type { Notification, Profile } from '@/lib/supabase/types'
+import type { Notification } from '@/types'
 import { useAuth } from '@/lib/auth/auth-helpers'
-import { getUserNotifications, deleteAllNotifications, markAllNotificationsAsRead } from '@/lib/notifications/notification-service'
+import { supabase } from '@/lib/supabase/client'
+import { deleteAllNotifications, markAllNotificationsAsRead, markNotificationAsRead, deleteNotification, getUserNotifications } from '@/lib/notifications/notification-service'
 
 export default function NotificationsPage() {
-  const { profile: currentUser, isLoading: authLoading } = useAuth()
+  const { profile: currentUser, isLoading: _authLoading } = useAuth()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
-    const load = async () => {
+    const loadNotifications = async () => {
       if (!currentUser) return
       setIsLoading(true)
       try {
         const res = await getUserNotifications(currentUser.id, 1, 50)
         setNotifications(res.notifications || [])
-      } catch (err) {
+      } catch (_err) { // eslint-disable-line @typescript-eslint/no-unused-vars
         // swallow - UI will show empty state
         setNotifications([])
       } finally {
@@ -32,8 +33,29 @@ export default function NotificationsPage() {
       }
     }
 
-    load()
-  }, [currentUser])
+    loadNotifications()
+
+    // Setup real-time subscription
+    const channel = supabase
+      .channel('notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `recipient_id=eq.${currentUser?.id}`,
+        },
+        (payload) => {
+          setNotifications((prev) => [payload.new as Notification, ...prev]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser]);
 
   const handleMarkAsRead = async (notificationId: string) => {
     setNotifications(prev => 
@@ -41,38 +63,37 @@ export default function NotificationsPage() {
     )
     // Attempt backend update, ignore errors for now
     try {
-      // markNotificationAsRead exists in notification-service (not always exported here). We optimistically update.
-      // Import is intentionally minimal to avoid circular imports; if missing, this is a no-op.
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const svc = require('@/lib/notifications/notification-service')
-      if (svc?.markNotificationAsRead) await svc.markNotificationAsRead(notificationId, currentUser?.id)
-    } catch (err) {}
+      await markNotificationAsRead(notificationId, currentUser?.id)
+    } catch (_err) { // eslint-disable-line @typescript-eslint/no-unused-vars
+    }
   }
 
   const handleDelete = async (notificationId: string) => {
     setNotifications(prev => prev.filter(n => n.id !== notificationId))
     try {
-      const svc = require('@/lib/notifications/notification-service')
-      if (svc?.deleteNotification) await svc.deleteNotification(notificationId, currentUser?.id)
-    } catch (err) {}
+      await deleteNotification(notificationId, currentUser?.id)
+    } catch (_err) { // eslint-disable-line @typescript-eslint/no-unused-vars
+    }
   }
 
   const handleMarkAllAsRead = async () => {
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
     try {
       await markAllNotificationsAsRead(currentUser!.id)
-    } catch (err) {}
+    } catch (_err) { // eslint-disable-line @typescript-eslint/no-unused-vars
+    }
   }
 
   const handleDeleteAll = async () => {
     setNotifications([])
     try {
       await deleteAllNotifications(currentUser!.id)
-    } catch (err) {}
+    } catch (_err) { // eslint-disable-line @typescript-eslint/no-unused-vars
+    }
   }
 
   const unreadNotifications = notifications.filter(n => !n.is_read)
-  const readNotifications = notifications.filter(n => n.is_read)
+  const _readNotifications = notifications.filter(n => n.is_read)
 
   if (isLoading) {
     return (
@@ -183,7 +204,7 @@ export default function NotificationsPage() {
                 <Bell className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No notifications yet</h3>
                 <p className="text-muted-foreground">
-                  When someone follows you, likes your posts, or comments, you'll see it here.
+                  When someone follows you, likes your posts, or comments, you&apos;ll see it here.
                 </p>
               </CardContent>
             </Card>

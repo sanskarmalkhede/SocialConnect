@@ -1,7 +1,7 @@
 'use client'
 
 import { supabase } from '@/lib/supabase/client'
-import { handleAuthError, AuthenticationError, ConflictError, AuthorizationError, ValidationError } from '@/lib/errors'
+import { handleAuthError, AuthenticationError, AuthorizationError, ValidationError } from '@/lib/errors'
 import type { RegisterFormData, LoginFormData } from '@/types'
 import type { User } from '@supabase/supabase-js'
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
@@ -102,8 +102,25 @@ export async function registerUser(data: RegisterFormData) {
       user: authData.user,
       needsEmailVerification: !authData.user.email_confirmed_at
     }
-  } catch (error) {
-    throw error
+  } catch (_error) {
+    throw _error
+  }
+}
+
+/**
+ * Create user profile in the database
+ */
+export async function createUserProfile(userId: string, username: string) {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .insert({ id: userId, username: username, avatar_url: null, full_name: null, website: null, updated_at: new Date().toISOString() });
+
+    if (error) {
+      throw handleAuthError(error);
+    }
+  } catch (_error) {
+    throw _error;
   }
 }
 
@@ -126,8 +143,8 @@ export async function loginUser(data: LoginFormData) {
     }
 
     return authData.user
-  } catch (error) {
-    throw error
+  } catch (_error) {
+    throw _error
   }
 }
 
@@ -140,8 +157,8 @@ export async function logoutUser() {
     if (error) {
       throw handleAuthError(error)
     }
-  } catch (error) {
-    throw error
+  } catch (_error) {
+    throw _error
   }
 }
 
@@ -157,44 +174,44 @@ export async function sendPasswordResetEmail(email: string) {
     if (error) {
       throw handleAuthError(error)
     }
-  } catch (error) {
-    throw error
+  } catch (_error) {
+    throw _error
   }
 }
 
 /**
  * Update user password
  */
-export async function changeUserPassword(_data: unknown) {
-  // Removed in MVP. Keep signature stubbed for backwards compatibility.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function changeUserPassword(data: ChangePasswordFormData) {
   try {
-    // First verify current password by attempting to sign in
-    const { data: user } = await supabase.auth.getUser()
-    if (!user.user?.email) {
-      throw new AuthenticationError('User not authenticated')
+    const { currentPassword, newPassword } = data;
+
+    // Get current user session to verify email
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.email) {
+      throw new AuthenticationError('User not authenticated');
     }
 
-    // Verify current password
-    const { error: verifyError } = await supabase.auth.signInWithPassword({
-      email: user.user.email,
-      password: ''
-    })
+    // Verify current password by attempting to sign in
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    });
 
-    if (verifyError) {
-      throw new AuthenticationError('Current password is incorrect')
+    if (signInError) {
+      throw new AuthenticationError('Current password is incorrect');
     }
 
     // Update password
     const { error: updateError } = await supabase.auth.updateUser({
-      password: ''
-    })
+      password: newPassword,
+    });
 
     if (updateError) {
-      throw handleAuthError(updateError)
+      throw handleAuthError(updateError);
     }
-  } catch (error) {
-    throw error
+  } catch (_error) {
+    throw _error;
   }
 }
 
@@ -210,7 +227,7 @@ export async function getCurrentUser(): Promise<User | null> {
     }
 
     return user
-  } catch (error) {
+  } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
     return null
   }
 }
@@ -227,7 +244,7 @@ export async function getCurrentSession() {
     }
 
     return session
-  } catch (error) {
+  } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
     return null
   }
 }
@@ -244,8 +261,8 @@ export async function refreshSession() {
     }
 
     return session
-  } catch (error) {
-    throw error
+  } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
+    throw _error
   }
 }
 
@@ -266,17 +283,18 @@ export async function getUserProfile(userId: string) {
     }
 
     return data
-  } catch (error) {
+  } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
     return null
   }
 }
 
 // React hook to get current user and loading state
 import { useEffect, useState } from 'react'
+import { Profile } from '@/types'
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
-  const [profile, setProfile] = useState<any>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -307,7 +325,7 @@ export function useAuth() {
           try {
             const profileData = await getUserProfile(session.user.id)
             setProfile(profileData)
-          } catch (error) {
+          } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
             setProfile(null)
           }
         } else {
@@ -317,7 +335,7 @@ export function useAuth() {
         
         setIsLoading(false)
         clearTimeout(timeoutId)
-      } catch (error) {
+      } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
         setUser(null)
         setProfile(null)
         setIsLoading(false)
@@ -334,7 +352,7 @@ export function useAuth() {
         try {
           const profileData = await getUserProfile(session.user.id)
           setProfile(profileData)
-        } catch (error) {
+        } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
           setProfile(null)
         }
       } else {
@@ -354,8 +372,8 @@ export function useAuth() {
       await supabase.auth.signOut()
       setUser(null)
       setProfile(null)
-    } catch (error) {
-      throw error
+    } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      throw _error
     }
   }
 

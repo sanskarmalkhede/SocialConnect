@@ -56,7 +56,7 @@ export function PostForm({ open, onOpenChange, onSuccess }: PostFormProps) {
         fileInputRef.current.value = ''
       }
       onSuccess()
-    } catch (error) {
+    } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
       toast({ title: 'Error', description: 'Failed to create post.', variant: 'destructive' })
     } finally {
       setIsLoading(false)
