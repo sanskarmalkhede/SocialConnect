@@ -3,219 +3,123 @@
 import { useState, useRef } from 'react'
 import Image from 'next/image'
 import { ImagePlus, X, Loader2 } from 'lucide-react'
-
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useAuth } from '@/lib/auth/auth-helpers'
 import { createPost } from '@/lib/posts/post-service'
-import { uploadImage } from '@/lib/posts/image-upload'
-import { getInitials } from '@/lib/format'
-import { POST_CATEGORIES } from '@/constants'
-import type { Profile } from '@/lib/supabase/types'
+import { uploadPostImage } from '@/lib/posts/post-image-upload'
+import { useToast } from '@/hooks/use-toast'
 
 interface PostFormProps {
-  profile?: Profile | null
-  onSuccess?: () => void
-  open?: boolean
-  onOpenChange?: (open: boolean) => void
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSuccess: () => void
 }
 
-export function PostForm({
-  profile,
-  onSuccess,
-  open,
-  onOpenChange
-}: PostFormProps) {
+export function PostForm({ open, onOpenChange, onSuccess }: PostFormProps) {
+  const { user } = useAuth()
+  const { toast } = useToast()
   const [content, setContent] = useState('')
-  const [category, setCategory] = useState<string>('general')
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
       if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        setError('Image size must be less than 5MB')
+        toast({ title: 'Error', description: 'Image size must be less than 5MB', variant: 'destructive' })
         return
       }
       setImageFile(file)
-      setError(null)
     }
   }
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (!profile) return
+    if (!user || !content.trim()) return
 
     setIsLoading(true)
-    setError(null)
-
     try {
-      let imageUrl = null
+      let imageUrl: string | undefined = undefined
       if (imageFile) {
-        imageUrl = await uploadImage(imageFile)
+        imageUrl = await uploadPostImage(imageFile, user.id)
       }
 
-      await createPost({
-        content: content.trim(),
-        category,
-        imageUrl
-      })
+      await createPost({ content, image_url: imageUrl }, user.id)
 
-      // Reset form
+      toast({ title: 'Success', description: 'Post created successfully.' })
       setContent('')
-      setCategory('general')
       setImageFile(null)
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
-
-      // Close dialog and notify parent
-      onOpenChange?.(false)
-      onSuccess?.()
+      onSuccess()
     } catch (error) {
-      setError('Failed to create post. Please try again.')
+      toast({ title: 'Error', description: 'Failed to create post.', variant: 'destructive' })
     } finally {
       setIsLoading(false)
     }
   }
 
-  // If no profile is provided, don't render anything
-  if (!profile) return null
-
-  const form = (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="flex items-start gap-3">
-        <div className="shrink-0">
-          <Avatar className="h-10 w-10">
-            {profile.avatar_url ? (
-              <AvatarImage 
-                src={profile.avatar_url} 
-                alt={profile.username || 'User avatar'} 
-              />
-            ) : (
-              <AvatarFallback>
-                {getInitials(profile.username || 'User')}
-              </AvatarFallback>
-            )}
-          </Avatar>
-        </div>
-
-        <div className="flex-1 space-y-4">
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create a new post</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <Textarea
             placeholder="What's on your mind?"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            rows={3}
-            className="resize-none"
+            rows={4}
             required
-            maxLength={280}
           />
-
-          <div className="flex flex-wrap gap-4">
-            <Select
-              value={category}
-              onValueChange={setCategory}
-            >
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                {POST_CATEGORIES.map((cat) => (
-                  <SelectItem key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <div className="flex-1">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageSelect}
-                ref={fileInputRef}
-                className="hidden"
-                id="image-upload"
-              />
-              <label htmlFor="image-upload">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="gap-2"
-                  asChild
-                >
-                  <span>
-                    <ImagePlus className="h-5 w-5" />
-                    Add Image
-                  </span>
-                </Button>
-              </label>
-            </div>
-          </div>
-
           {imageFile && (
-            <div className="relative w-full pt-[56.25%] bg-muted rounded-lg overflow-hidden">
+            <div className="relative">
               <Image
                 src={URL.createObjectURL(imageFile)}
-                alt="Selected image"
-                fill
-                className="object-cover"
+                alt="Selected image preview"
+                width={500}
+                height={500}
+                className="rounded-md object-cover w-full h-auto"
               />
               <Button
                 type="button"
                 variant="destructive"
                 size="icon"
-                className="absolute top-2 right-2 h-8 w-8"
-                onClick={() => {
-                  setImageFile(null)
-                  if (fileInputRef.current) {
-                    fileInputRef.current.value = ''
-                  }
-                }}
+                className="absolute top-2 right-2 h-7 w-7"
+                onClick={() => setImageFile(null)}
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
           )}
-
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
-
-          <div className="flex justify-end">
-            <Button 
-              type="submit" 
-              disabled={!content.trim() || isLoading}
-              className="gap-2"
-            >
-              {isLoading && (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              )}
-              Post
+          <div className="flex justify-between items-center">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageSelect}
+              ref={fileInputRef}
+              className="hidden"
+              id="post-image-upload"
+            />
+            <label htmlFor="post-image-upload">
+              <Button type="button" variant="outline" asChild>
+                <span>
+                  <ImagePlus className="h-4 w-4 mr-2" />
+                  Add Image
+                </span>
+              </Button>
+            </label>
+            <Button type="submit" disabled={isLoading || !content.trim()}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Post
             </Button>
           </div>
-        </div>
-      </div>
-    </form>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
-
-  if (typeof open === 'boolean') {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Create Post</DialogTitle>
-          </DialogHeader>
-          {form}
-        </DialogContent>
-      </Dialog>
-    )
-  }
-
-  return form
 }

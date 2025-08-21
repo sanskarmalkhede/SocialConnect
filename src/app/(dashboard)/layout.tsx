@@ -1,8 +1,6 @@
-import { Suspense } from 'react'
-import { Sidebar } from '@/components/layout/Sidebar'
+
 import { Header } from '@/components/layout/Header'
-import { ErrorBoundary } from '@/components/error/ErrorBoundary'
-import { CustomToaster } from '@/components/error/ErrorToast'
+import { Sidebar } from '@/components/layout/Sidebar'
 import { AuthGuard } from '@/components/auth/AuthGuard'
 
 export default function DashboardLayout({
@@ -12,20 +10,15 @@ export default function DashboardLayout({
 }) {
   return (
     <AuthGuard>
-      <ErrorBoundary>
-        <div className="min-h-screen bg-background">
+      <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+        <Sidebar />
+        <div className="flex flex-col">
           <Header />
-          <div className="flex">
-            <Sidebar />
-            <main className="flex-1 p-6">
-              <Suspense fallback={<div>Loading...</div>}>
-                {children}
-              </Suspense>
-            </main>
-          </div>
-          <CustomToaster />
+          <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+            {children}
+          </main>
         </div>
-      </ErrorBoundary>
+      </div>
     </AuthGuard>
   )
 }

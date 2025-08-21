@@ -3,215 +3,121 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Heart, MessageCircle, Share, MoreHorizontal, Trash2, Edit } from 'lucide-react'
-
+import { Heart, MessageCircle, MoreHorizontal, Trash2, Edit, Bookmark } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { formatRelativeTime, formatCount, getInitials } from '@/lib/format'
-import { POST_CATEGORY_LABELS } from '@/constants'
-import type { Post } from '@/lib/supabase/types'
+import { formatDistanceToNow } from 'date-fns'
+import { useAuth } from '@/lib/auth/auth-helpers'
+import { likePost, unlikePost } from '@/lib/social/like-service'
+import { deletePost } from '@/lib/posts/post-service'
+import { useToast } from '@/hooks/use-toast'
+import { type Post } from '@/types'
 import { cn } from '@/lib/utils'
 
 interface PostCardProps {
   post: Post
-  currentUserId?: string
-  showActions?: boolean
-  onLike?: (postId: string) => Promise<void>
-  onUnlike?: (postId: string) => Promise<void>
-  onComment?: (postId: string) => void
-  onEdit?: (postId: string) => void
-  onDelete?: (postId: string) => void
-  onShare?: (postId: string) => void
-  className?: string
+  onPostDeleted?: (postId: string) => void
 }
 
-export function PostCard({
-  post,
-  currentUserId,
-  showActions = true,
-  onLike,
-  onUnlike,
-  onComment,
-  onEdit,
-  onDelete,
-  onShare,
-  className
-}: PostCardProps) {
+export function PostCard({ post, onPostDeleted }: PostCardProps) {
+  const { user, profile } = useAuth()
+  const { toast } = useToast()
   const [isLiking, setIsLiking] = useState(false)
-  const [localLikeCount, setLocalLikeCount] = useState(post.like_count)
-  const [localIsLiked, setLocalIsLiked] = useState(post.is_liked_by_user || false)
-
-  // Safely handle potentially missing author data
-  const author = post.author || {
-    id: post.author_id,
-    username: 'Unknown User',
-    avatar_url: null,
-    role: 'user' as const,
-    profile_visibility: 'public' as const
-  }
-
-  const isOwnPost = currentUserId === post.author_id
-  const isAdmin = currentUserId && author.role === 'admin'
+  const [likeCount, setLikeCount] = useState(post.like_count)
+  const [isLiked, setIsLiked] = useState(post.is_liked_by_user)
 
   const handleLikeClick = async () => {
-    if (!currentUserId || isLiking) return
+    if (!user || isLiking) return
 
     setIsLiking(true)
+    const originalIsLiked = isLiked
+    const originalLikeCount = likeCount
+
+    // Optimistic update
+    setIsLiked(!originalIsLiked)
+    setLikeCount(originalLikeCount + (!originalIsLiked ? 1 : -1))
+
     try {
-      if (localIsLiked) {
-        await onUnlike?.(post.id)
-        setLocalLikeCount(prev => Math.max(0, prev - 1))
-        setLocalIsLiked(false)
+      if (originalIsLiked) {
+        await unlikePost(post.id, user.id)
       } else {
-        await onLike?.(post.id)
-        setLocalLikeCount(prev => prev + 1)
-        setLocalIsLiked(true)
+        await likePost(post.id, user.id)
       }
     } catch (error) {
-      // no-op
-    } finally {
-      setIsLiking(false)
+      // Revert optimistic update on error
+      setIsLiked(originalIsLiked)
+      setLikeCount(originalLikeCount)
+      toast({ title: 'Error', description: 'Failed to update like status.', variant: 'destructive' })
+    }
+    setIsLiking(false)
+  }
+
+  const handleDelete = async () => {
+    if (!user || (user.id !== post.author_id && profile?.role !== 'admin')) return
+
+    try {
+      await deletePost(post.id)
+      toast({ title: 'Success', description: 'Post deleted successfully.' })
+      onPostDeleted?.(post.id)
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to delete post.', variant: 'destructive' })
     }
   }
 
   return (
-    <Card className={cn('overflow-hidden', className)}>
-      <CardHeader className="p-4 flex flex-row items-start gap-4">
-        <Link 
-          href={`/profile/${author.username}`}
-          className="shrink-0"
-        >
-          <Avatar className="h-10 w-10">
-            {author.avatar_url ? (
-              <AvatarImage 
-                src={author.avatar_url} 
-                alt={author.username}
-                className="object-cover"
-              />
-            ) : (
-              <AvatarFallback>
-                {getInitials(author.username)}
-              </AvatarFallback>
-            )}
-          </Avatar>
-        </Link>
-
-        <div className="flex-1 space-y-1.5">
-          <div className="flex items-center gap-2">
-            <Link 
-              href={`/profile/${author.username}`}
-              className="font-semibold hover:underline"
-            >
-              {author.username}
+    <Card>
+      <CardHeader className="flex flex-row items-start gap-4 p-4">
+        <Avatar>
+          <AvatarImage src={post.author.avatar_url || ''} />
+          <AvatarFallback>{post.author.username.charAt(0)}</AvatarFallback>
+        </Avatar>
+        <div className="flex-1">
+          <div className="flex items-center justify-between">
+            <Link href={`/profile/${post.author.username}`} className="font-semibold hover:underline">
+              {post.author.username}
             </Link>
-            {author.role === 'admin' && (
-              <Badge variant="secondary" className="h-5">Admin</Badge>
-            )}
-            <span className="text-muted-foreground">·</span>
-            <span className="text-muted-foreground text-sm">
-              {formatRelativeTime(post.created_at)}
+            <span className="text-xs text-muted-foreground">
+              {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
             </span>
-
-            {(isOwnPost || isAdmin) && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    className="h-8 w-8 ml-auto"
-                  >
-                    <MoreHorizontal className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {isOwnPost && onEdit && (
-                    <DropdownMenuItem onClick={() => onEdit(post.id)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </DropdownMenuItem>
-                  )}
-                  {(isOwnPost || isAdmin) && onDelete && (
-                    <DropdownMenuItem
-                      onClick={() => onDelete(post.id)}
-                      className="text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
           </div>
-
-          {post.category && (
-            <Badge variant="outline" className="pointer-events-none">
-              {POST_CATEGORY_LABELS[post.category]}
-            </Badge>
-          )}
-          
-          <p className="text-sm text-muted-foreground">
-            {post.content}
-          </p>
-
-          {post.image_url && (
-            <div className="relative w-full pt-[56.25%] mt-2 overflow-hidden rounded-lg">
-              <Image
-                src={post.image_url}
-                alt="Post image"
-                fill
-                className="object-cover"
-              />
-            </div>
-          )}
+          <p className="text-sm">{post.content}</p>
         </div>
+        {(user?.id === post.author_id || profile?.role === 'admin') && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </CardHeader>
-
-      {showActions && (
-        <CardContent className="p-4 pt-0">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1.5"
-              onClick={handleLikeClick}
-              disabled={!currentUserId || isLiking}
-            >
-              <Heart 
-                className={cn(
-                  "h-5 w-5",
-                  localIsLiked && "fill-current text-red-500"
-                )} 
-              />
-              <span>{formatCount(localLikeCount)}</span>
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => onComment?.(post.id)}
-              disabled={!currentUserId}
-            >
-              <MessageCircle className="h-5 w-5" />
-              <span>{formatCount(post.comment_count)}</span>
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => onShare?.(post.id)}
-            >
-              <Share className="h-5 w-5" />
-              <span>{formatCount(post.share_count)}</span>
-            </Button>
-          </div>
+      {post.image_url && (
+        <CardContent className="p-0">
+          <Image src={post.image_url} alt="Post image" width={500} height={500} className="w-full h-auto object-cover" />
         </CardContent>
       )}
+      <CardFooter className="p-2 flex justify-between">
+        <Button variant="ghost" size="sm" onClick={handleLikeClick} disabled={isLiking || !user}>
+          <Heart className={cn('mr-2 h-4 w-4', isLiked && 'fill-red-500 text-red-500')} />
+          {likeCount}
+        </Button>
+        <Button variant="ghost" size="sm">
+          <MessageCircle className="mr-2 h-4 w-4" />
+          {post.comment_count}
+        </Button>
+        <Button variant="ghost" size="sm">
+          <Bookmark className="mr-2 h-4 w-4" />
+        </Button>
+      </CardFooter>
     </Card>
   )
 }

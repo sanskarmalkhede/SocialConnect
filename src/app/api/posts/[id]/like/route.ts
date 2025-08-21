@@ -1,27 +1,22 @@
+
 import { NextRequest, NextResponse } from 'next/server'
-import { likePost, unlikePost, checkLikeStatus } from '@/lib/social/like-service'
-import { handleAPIError, createAPIResponse } from '@/lib/api/error-handler'
-import { authenticateRequest } from '@/lib/auth/auth-helpers'
+import { likePost, unlikePost } from '@/lib/social/like-service'
+import { handleAPIError, createAPIResponse } from '@/lib/errors'
+import { requireAuthMiddleware } from '@/lib/auth/server-auth-helpers'
 
-interface RouteParams {
-  params: {
-    id: string
-  }
-}
-
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const { id: postId } = params
-    const { user } = await authenticateRequest(request)
+    const session = await requireAuthMiddleware(request)
+    const userId = session.user.id
+    const postId = params.id
 
-    await likePost(user.id, postId)
+    await likePost(userId, postId)
 
     return NextResponse.json(
-      createAPIResponse({ 
-        message: 'Post liked successfully',
-        post_id: postId,
-        is_liked: true
-      }),
+      createAPIResponse(null, { message: 'Successfully liked post' }),
       { status: 200 }
     )
   } catch (error) {
@@ -34,43 +29,19 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const { id: postId } = params
-    const { user } = await authenticateRequest(request)
+    const session = await requireAuthMiddleware(request)
+    const userId = session.user.id
+    const postId = params.id
 
-    await unlikePost(user.id, postId)
+    await unlikePost(userId, postId)
 
     return NextResponse.json(
-      createAPIResponse({ 
-        message: 'Post unliked successfully',
-        post_id: postId,
-        is_liked: false
-      }),
-      { status: 200 }
-    )
-  } catch (error) {
-    const errorResponse = handleAPIError(error)
-    return NextResponse.json(errorResponse, { 
-      status: error instanceof Error && 'statusCode' in error 
-        ? (error as any).statusCode 
-        : 500 
-    })
-  }
-}
-
-export async function GET(request: NextRequest, { params }: RouteParams) {
-  try {
-    const { id: postId } = params
-    const { user } = await authenticateRequest(request)
-
-    const isLiked = await checkLikeStatus(user.id, postId)
-
-    return NextResponse.json(
-      createAPIResponse({ 
-        post_id: postId,
-        is_liked: isLiked
-      }),
+      createAPIResponse(null, { message: 'Successfully unliked post' }),
       { status: 200 }
     )
   } catch (error) {
